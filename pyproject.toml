@@ -1,0 +1,234 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Project Metadata
+# ─────────────────────────────────────────────────────────────────────────────
+[project]
+name = "keyrings.artifacts"
+description = "Keyring backend, that automatically retrieves credentials for Azure Artifacts."
+authors = [{ name = "Jens Lorrmann", email = "jslorrma@gmail.com" }]
+maintainers = [
+  { name = "Jens Lorrmann", email = "jslorrma@gmail.com" },
+]
+readme = "README.md"
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Intended Audience :: Developers",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3 :: Only",
+]
+dynamic = ["version"]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Project Dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+requires-python = ">=3.7"
+
+dependencies = [
+  "keyring>=16.0",
+  "requests>=2.20.0",
+  "azure-identity>=1.17.1",
+  "keyrings-alt>=5.0.2,<6",
+  "pycryptodomex>=3.20.0,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.2,<9",
+  "pytest-cov>=5.0.0,<6",
+  "pytest-mock>=3.14.0,<4",
+  "ruff>=0.6.1,<0.7",
+  "black>=24.8.0,<25",
+  "pre-commit>=3.8.0,<4",
+]
+
+[tool.pixi.pypi-dependencies]
+keyrings_artifacts = { path = ".", editable = true }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Project Entrypoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+[project.entry-points."keyring.backends"]
+artifacts = "keyrings_artifacts.artifacts:ArtifactsKeyringBackend"
+crypt_file = "keyrings_artifacts.crypt_file:EncryptedKeyring_"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Build System Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/keyrings_artifacts/_version.py"
+
+[tool.hatch.build]
+packages = ["src/keyrings_artifacts"]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pixi Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "win-64"]
+
+[tool.pixi.environments]
+dev = ["dev"]
+
+[tool.pixi.tasks]
+post-install = "pre-commit install"
+
+
+[tool.pixi.feature.dev.tasks.test]
+# Run tests with pytest and generate a coverage report in XML format
+cmd = "pytest -s -v --cov && coverage xml"
+
+[tool.pixi.feature.dev.tasks.lint]
+# Format code using Ruff
+cmd = "ruff check --fix ./src"
+
+[tool.pixi.feature.dev.tasks.format]
+# Format code using Ruff
+cmd = "ruff format ./src"
+
+[tool.pixi.feature.dev.tasks.pre-commit]
+# Run all pre-commit hooks
+cmd = "pre-commit run --all-files"
+
+[tool.pixi.feature.dev.tasks.bump-version]
+# Bump the project version using Hatch
+# Usage: pixi run -e dev bump-version [patch|minor|major],[dev]
+cmd = "pixi exec hatch version"
+
+[tool.pixi.feature.dev.tasks.build-sdist]
+# Build the source distribution (sdist) using Hatch
+# Inputs: source files and pyproject.toml
+# Outputs: tar.gz files in the dist directory
+cmd = "pixi exec hatch build -t sdist"
+inputs = ["src/**/*", "pyproject.toml"]
+outputs = ["dist/*.tar.gz"]
+
+[tool.pixi.feature.dev.tasks.build-wheel]
+# Build the wheel distribution using Hatch
+# Inputs: source files and pyproject.toml
+# Outputs: wheel files in the dist directory
+cmd = "pixi exec hatch build -t wheel"
+inputs = ["src/**/*", "pyproject.toml"]
+outputs = ["dist/*.whl"]
+
+[tool.pixi.feature.dev.tasks.requirements-export]
+# Export dependencies to requirements.txt
+cmd = "bitc_helper export-requirements requirements"
+
+[tool.pixi.feature.dev.tasks.requirements-export-dev]
+# Export development dependencies to requirements.txt
+cmd = "bitc_helper export-requirements requirements --feature dev"
+
+[tool.pixi.feature.dev.tasks.requirements-export-all]
+# Export all dependencies to requirements.txt
+cmd = "bitc_helper export-requirements requirements --all"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Code Formatting and Linting
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+fix = true
+src = ["src"]
+lint.select = [
+  "I",   # isort
+  "F",   # pyflakes
+  "E",
+  "W",   # pycodestyle
+  "B",   # flake8-bugbear
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW", # pylint
+  "PIE", # misc lints
+  "ISC", # implicit string concatenation
+  "TCH", # type-checking imports
+  "C4",  # comprehensions
+  "PGH", # pygrep-hooks
+  "UP",  # pyupgrade
+  "RUF", # Ruff-specific rules
+]
+lint.unfixable = ["PLR"]
+lint.ignore = [
+  # space before : (needed for how black formats slicing)
+  "E203", # not yet implemented
+  # module level import not at top of file
+  "E402",
+  # line tool long (will be handled by black)
+  "E501",
+  # Conflicts with ruff format
+  "W191",
+  # Function is too complex
+  "C901",
+  # do not assign a lambda expression, use a def
+  "E731",
+  # unused variables in function scopes
+  "F841",
+  # line break before binary operator
+  # "W503",  # not yet implemented
+  # line break after binary operator
+  # "W504",  # not yet implemented
+  # invalid escape sequence
+  "W605",
+  # controversial
+  "B006",
+  # controversial
+  "B007",
+  # controversial
+  "B008",
+  # setattr is used to side-step mypy
+  "B009",
+  # getattr is used to side-step mypy
+  "B010",
+  # tests use assert False
+  "B011",
+  # tests use comparisons but not their returned value
+  "B015",
+  # false positives
+  "B019",
+  # # Loop control variable overrides iterable it iterates
+  # "B020",
+  # # Function definition does not bind loop variable
+  # "B023",
+  # Functions defined inside a loop must not use variables redefined in the loop
+  # "B301",  # not yet implemented
+  # # Only works with python >=3.10
+  # "B905",
+  # # Too many arguments to function call
+  # "PLR0913",
+  # # Too many returns
+  # "PLR0911",
+  # Too many branches
+  "PLR0912",
+  # Too many statements
+  "PLR0915",
+  # Redefined loop name
+  "PLW2901",
+  # Global statements are discouraged
+  "PLW0603",
+  # Docstrings should not be included in stubs
+  "PYI021",
+  # No builtin `eval()` allowed
+  "S307",
+  # compare-to-empty-string
+  "PLC1901",
+  # Use typing_extensions.TypeAlias for type aliases
+  # "PYI026",  # not yet implemented
+  # Use "collections.abc.*" instead of "typing.*" (PEP 585 syntax)
+  # "PYI027",  # not yet implemented
+  # while int | float can be shortened to float, the former is more explicit
+  # "PYI041",  # not yet implemented
+  # Checks for implicitly concatenated strings on a single line.
+  "ISC001"
+]

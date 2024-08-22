@@ -1,0 +1,80 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        stages: [commit]
+      - id: end-of-file-fixer
+        stages: [commit]
+      - id: check-toml
+        stages: [commit]
+      - id: check-added-large-files
+        stages: [commit]
+        args: ['--maxkb=50000']
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+        args:
+          - --extra-keys
+          - |
+            cell.attachments
+            cell.metadata.code_folding
+            cell.metadata.id
+            cell.metadata.user_expressions
+            metadata.celltoolbar
+            metadata.colab.name
+            metadata.colab.provenance
+            metadata.interpreter
+            metadata.notify_time
+            metadata.toc
+            metadata.toc-autonumbering
+            metadata.toc-showcode
+            metadata.toc-showmarkdowntxt
+            metadata.toc-showtags
+            metadata.varInspector
+            metadata.vscode
+        files: ^templates/
+
+  # notebook code linting
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.8.7
+    hooks:
+      - id: nbqa-black
+        stages: [commit]
+        args: [--line-length=120]
+        files: ^templates/
+      - id: nbqa-ruff
+        stages: [commit]
+        args: [--line-length=120, --extend-ignore=E402, --extend-ignore=B018, --unsafe-fixes]
+        files: ^templates/
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        stages: [commit]
+        args: ['-d {extends: relaxed, rules: {line-length: disable}}', '-s']
+
+
+  - repo: https://github.com/keewis/blackdoc
+    rev: v0.3.9
+    hooks:
+      - id: blackdoc
+        stages: [commit]
+        files: ^python/
+
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      # Run the linter.
+      - id: ruff
+        stages: [commit]
+        args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
+        files: ^python/
+      # Run the formatter.
+      - id: ruff-format
+        files: ^python/

@@ -1,0 +1,39 @@
+# pixi environments
+.pixi
+
+# Temporary and binary files
+*~
+*.html
+*.py[cod]
+*.xlsx
+*.so
+*.dll
+*.log
+*.pot
+__pycache__/*
+.cache/*
+*/.ipynb_checkpoints/*
+**/.ipynb_checkpoints
+.DS_Store
+
+# Project files and folders
+.settings
+.idea
+.vscode
+.env
+templates/**
+!templates/**/*.ipynb
+!templates/**/*.tex
+
+# Pytest
+.coverage
+coverage.xml
+
+# Sensible data
+*.secret
+
+# Package files
+*.egg
+*.eggs/
+.installed.cfg
+*.egg-info
