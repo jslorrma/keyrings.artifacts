@@ -41,6 +41,9 @@ dev = [
   "pre-commit>=3.8.0,<4",
 ]
 
+[tool.pixi.feature.ci.dependencies]
+twine = ">=5.1.1,<6"
+
 [tool.pixi.pypi-dependencies]
 keyrings_artifacts = { path = ".", editable = true }
 
@@ -74,7 +77,8 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "win-64"]
 
 [tool.pixi.environments]
-dev = ["dev"]
+dev = { features = ["dev"], solve-group = "default" }
+ci = { features = ["ci"], solve-group = "default" }
 
 [tool.pixi.tasks]
 post-install = "pre-commit install"
@@ -84,13 +88,13 @@ post-install = "pre-commit install"
 # Run tests with pytest and generate a coverage report in XML format
 cmd = "pytest -s -v --cov && coverage xml"
 
-[tool.pixi.feature.dev.tasks.lint]
+[tool.pixi.feature.dev.tasks.ruff-check]
 # Format code using Ruff
-cmd = "ruff check --fix ./src"
+cmd = "ruff check --fix --exit-non-zero-on-fix --force-exclude ./src"
 
 [tool.pixi.feature.dev.tasks.format]
 # Format code using Ruff
-cmd = "ruff format ./src"
+cmd = "ruff format --force-exclude ./src"
 
 [tool.pixi.feature.dev.tasks.pre-commit]
 # Run all pre-commit hooks
