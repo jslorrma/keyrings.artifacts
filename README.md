@@ -25,8 +25,7 @@ Detailed documentation on how to setup the usage can be found in the respective 
 
 ## Kudos
 
-Special thanks to [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) for their [PR](https://github.com/microsoft/artifacts-keyring/pull/56) in Microsoft's `artifacts-keyring` repository. This package was heavily inspired by their PR and their idea of a plain Python version.
-
+Special thanks to [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) for their [PR](https://github.com/microsoft/artifacts-keyring/pull/56) in Microsoft's `artifacts-keyring` repository. This package was heavily inspired by their PR and their idea of a plain Python version. Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.
 
 ## How It Works
 
