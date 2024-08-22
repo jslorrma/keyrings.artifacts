@@ -65,15 +65,20 @@ class CredentialProvider:
     _DEFAULT_VSTS_SCOPE = "vso.packaging_write"
 
     def __init__(self) -> None:
-        self._oauth_authority = None
-        self._vsts_authority = None
+        self._oauth_authority: str | None = None
+        self._vsts_authority: str | None = None
 
-    def _is_upload_endpoint(self, url):
+    @property
+    def username(self) -> str | None:
+        """Get the username."""
+        return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
+
+    def _is_upload_endpoint(self, url: str) -> bool:
         """Check if the given URL is the upload endpoint."""
         url = url[:-1] if url[-1] == "/" else url
         return url.endswith("pypi/upload")
 
-    def _can_authenticate(self, url, auth):
+    def _can_authenticate(self, url: str, auth: tuple[str, str] | None) -> bool:
         """Check if the given URL can be authenticated with the given credentials."""
         response = requests.get(url, auth=auth)
 
@@ -82,7 +87,7 @@ class CredentialProvider:
             HTTPStatus.FORBIDDEN,
         )
 
-    def _get_authorities(self, url):
+    def _get_authorities(self, url: str) -> tuple[str, str]:
         """Send a GET to the url and parse the response header"""
         # send GET request
         response = requests.get(url)

@@ -12,7 +12,6 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
-import contextlib
 import warnings
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
@@ -35,7 +34,7 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
     SUPPORTED_NETLOC = ("pkgs.dev.azure.com", "pkgs.visualstudio.com", "pkgs.codedev.ms", "pkgs.vsts.me")
     _PROVIDER = CredentialProvider
 
-    # _LOCAL_BACKEND = keyring.get_keyring()
+    __LOCAL_BACKEND = None
 
     priority = 9.9
 
@@ -44,21 +43,17 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         """
         Get the local keyring backend.
         """
-        @contextlib.contextmanager
-        def temporary_priority(instance, new_priority):
-            original_priority = instance.priority
-            instance.priority = new_priority
-            try:
-                yield
-            finally:
-                instance.priority = original_priority
+        # if we fall back to the local backend, we don't want to loop infinitely
+        # so we set the priority to -1 to prevent it from being selected again
+        if self.__LOCAL_BACKEND is not None:
+            return self.__LOCAL_BACKEND
 
         _self = next(
             kr for kr in keyring.backend.get_all_keyring() if kr.__class__.__name__ == "ArtifactsKeyringBackend"
         )
-
-        with temporary_priority(_self, -1):
-            return keyring.get_keyring()
+        _self.priority = -1
+        self.__LOCAL_BACKEND = keyring.get_keyring()
+        return self.__LOCAL_BACKEND
 
     def __init__(self):
         self._cache = {}
@@ -90,13 +85,13 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         if netloc is None or not netloc.endswith(self.SUPPORTED_NETLOC):
             return None
 
+        provider = self._PROVIDER()
+
         # Check if credentials are already stored in the local keyring
         stored_password = self._LOCAL_BACKEND.get_password(service, username)
 
-        if stored_password:
+        if stored_password and provider._can_authenticate(service, (self._PROVIDER.username, stored_password)):
             return keyring.credentials.SimpleCredential(username, stored_password)
-
-        provider = self._PROVIDER()
 
         username, password = provider.get_credentials(service)
 
