@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts_keyring/artifacts.py
+keyrings_artifacts/artifacts.py
 ---------------------------
 
 Azure Artifacts keyring backend.
@@ -12,17 +12,13 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
-import platform
+import contextlib
 import warnings
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 import keyring.credentials
 
-if platform.system().lower().startswith("win"):
-    import keyring.backends.Windows
-
-from .crypt_file import EncryptedKeyring_
 from .plugin import CredentialProvider
 
 
@@ -39,9 +35,30 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
     SUPPORTED_NETLOC = ("pkgs.dev.azure.com", "pkgs.visualstudio.com", "pkgs.codedev.ms", "pkgs.vsts.me")
     _PROVIDER = CredentialProvider
 
-    _LOCAL_BACKEND = keyring.backends.Windows() if platform.system().lower().startswith("win") else EncryptedKeyring_()
+    # _LOCAL_BACKEND = keyring.get_keyring()
 
     priority = 9.9
+
+    @property
+    def _LOCAL_BACKEND(self):
+        """
+        Get the local keyring backend.
+        """
+        @contextlib.contextmanager
+        def temporary_priority(instance, new_priority):
+            original_priority = instance.priority
+            instance.priority = new_priority
+            try:
+                yield
+            finally:
+                instance.priority = original_priority
+
+        _self = next(
+            kr for kr in keyring.backend.get_all_keyring() if kr.__class__.__name__ == "ArtifactsKeyringBackend"
+        )
+
+        with temporary_priority(_self, -1):
+            return keyring.get_keyring()
 
     def __init__(self):
         self._cache = {}

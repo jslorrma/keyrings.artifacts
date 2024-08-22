@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts_keyring/plugin.py
+keyrings_artifacts/plugin.py
 ---------------------------
 
 This module implements the CredentialProvider class which is a Azure credential providers for
@@ -38,7 +38,7 @@ class CredentialProvider:
     """
 
     # Non-interactive mode global variable
-    _NON_INTERACTIVE_VAR_NAME = "ARTIFACTS_KEYRING_NONINTERACTIVE_MODE"
+    _NON_INTERACTIVE_VAR_NAME = "keyrings_artifacts_NONINTERACTIVE_MODE"
 
     # ADO global variables
     _PAT_ENV_VAR = "AZURE_DEVOPS_EXT_PAT"

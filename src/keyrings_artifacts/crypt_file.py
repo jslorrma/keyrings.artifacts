@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts_keyring/crpyt_file.py
+keyrings_artifacts/crpyt_file.py
 ---------------------------
 
 This module provides an encrypted keyring backend.
@@ -12,18 +12,42 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
-import hashlib
 import subprocess
 from typing import TYPE_CHECKING
 
 from keyrings.alt.file import EncryptedKeyring
 
+_KEYGEN_SCRIPT = """
+# Gather CPU information
+cpu_id=$(lscpu | grep "Model name" | awk -F: '{print $2}' | xargs)
 
-def run_command(command: str) -> str:
-    """
-    Run a command and return the output.
-    """
-    return subprocess.check_output(command, shell=True).decode("utf-8").strip()
+# Gather MAC address using ifconfig (first network interface)
+mac_address_if=$(ifconfig | grep ether | head -n 1 | awk '{print $2}')
+
+# Gather MAC address using ip (first network interface)
+mac_address_ip=$(ip addr | grep ether | head -n 1 | awk '{print $2}')
+
+# Gather hostname
+hostname=$(hostname)
+
+# Gather operating system name
+uname_o=$(uname -o)
+
+# Gather machine hardware name
+uname_m=$(uname -m)
+
+# Gather current username
+whoami=$(whoami)
+
+# Combine the information
+combined_info="${cpu_id}_${mb_serial}_${disk_serial}_${mac_address_if}_${mac_address_ip}_${hostname}_${uname_o}_${uname_m}_${whoami}"
+
+# Generate a unique hashed key using SHA-256
+unique_key=$(echo -n "$combined_info" | sha256sum | awk '{print $1}')
+
+# Output the unique key
+echo "$unique_key"
+"""
 
 
 class EncryptedKeyring_(EncryptedKeyring):
@@ -34,18 +58,13 @@ class EncryptedKeyring_(EncryptedKeyring):
     encrypted using the Fernet symmetric encryption algorithm. The encryption key is derived from
     a password generated from system and hardware information.
     """
-
+    filename = "artifacts_keyring.cfg"
     priority = 3
 
     @property
     def _password(self):
-        _mac_address_if = run_command("ifconfig | grep ether | head -n 1 | awk '{print $2}'")
-        _mac_address_ip = run_command("ip addr | grep ether | head -n 1 | awk '{print $2}'")
-        _hostname = run_command("hostname")
-        _uname = run_command("uname -a")
-        _whoami = run_command("whoami")
-
-        return hashlib.sha256(f"{_mac_address_if}{_mac_address_ip}{_hostname}{_uname}{_whoami}".encode()).digest()
+        _command = f"bash -c '{_KEYGEN_SCRIPT}'"
+        return subprocess.run(_command, shell=True, capture_output=True, check=False).stdout.decode("utf-8").strip()
 
     def _get_new_password(self):
         return self._password
@@ -58,7 +77,17 @@ class EncryptedKeyring_(EncryptedKeyring):
         self.keyring_key = self._password
         try:
             ref_pw = self.get_password("keyring-setting", "password reference")
-            assert ref_pw == "password reference value"
+            if ref_pw != "password reference value":
+                # keyring_key is generated from system and hardware information, so this can
+                # only happen if hardware information has changed, which is unlikely. But if it
+                # does happen, we need to initialize the keyring again.
+                import pathlib
+
+                try:
+                    pathlib.Path(self.file_path).unlink()
+                except FileNotFoundError:
+                    pass
+                self._init_file()
         except AssertionError:
             self._lock()
             raise ValueError("Incorrect Password")  # noqa: B904

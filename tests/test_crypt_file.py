@@ -3,7 +3,7 @@
 tests/test_crypt_file.py
 ------------------------
 
-Unit tests for the EncryptedKeyring_ class in the artifacts_keyring package.
+Unit tests for the EncryptedKeyring_ class in the keyrings_artifacts package.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ def test_encrypted_keyring_initialization(keyring):
     assert keyring is not None
 
 @pytest.mark.parametrize("service, username, password", [
-    ("service1", "username1", "password1"),
-    ("service2", "username2", "password2"),
-    ("service3", "username3", "password3"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload", "username1", "password1"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload1", "username2", "password2"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload2", "username3", "password3"),
 ])
 def test_encrypted_keyring_set_and_get_password(keyring, service, username, password):
     # Set the password
@@ -39,9 +39,9 @@ def test_encrypted_keyring_set_and_get_password(keyring, service, username, pass
 
 
 @pytest.mark.parametrize("service, username", [
-    ("service1", "username1"),
-    ("service2", "username2"),
-    ("service3", "username3"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload", "username1"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload1", "username2"),
+    ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload2", "username3"),
 ])
 def test_encrypted_keyring_delete_password(keyring, service, username):
     # Delete the password

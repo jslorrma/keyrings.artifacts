@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts_keyring/support.py
+keyrings_artifacts/support.py
 ---------------------------
 
 It provides the AzureCredentialWithDevicecode class which extends ChainedTokenCredential to support
