@@ -17,7 +17,7 @@ jobs:
           environments: ci
 
       - name: Build package
-        run: pixi run -e ci build-wheel
+        run: pixi run -e dev build-wheel
 
       - name: Publish to PyPI
         run: |

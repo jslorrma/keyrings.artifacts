@@ -40,13 +40,11 @@ jobs:
       - name: Run tests
         run: pixi run -e dev test
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
         with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
+          name: coverage-report
+          path: coverage.xml
 
   version-check:
     runs-on: ubuntu-latest
@@ -92,7 +90,7 @@ jobs:
           environments: ci
 
       - name: Build package
-        run: pixi run -e ci build-wheel
+        run: pixi run -e dev build-wheel
 
       - name: Publish to GitHub Packages
         run: |
