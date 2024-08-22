@@ -23,6 +23,10 @@ Detailed documentation on how to setup the usage can be found in the respective 
 - `pixi` is available in the [Pixi documentation](https://pixi.sh/latest/advanced/authentication/#installing-keyring) section.
 - `uv` is available in the [uv documentation](https://docs.astral.sh/uv/guides/integration/alternative-indexes/#using-keyring).
 
+## Kudos
+
+Special thanks to [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) for their [PR](https://github.com/microsoft/artifacts-keyring/pull/56) in Microsoft's `artifacts-keyring` repository. This package was heavily inspired by their PR and their idea of a plain Python version.
+
 
 ## How It Works
 
