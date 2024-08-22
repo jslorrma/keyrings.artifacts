@@ -1,6 +1,6 @@
 # Keyring for Azure DevOps Artifacts
 
-[![Build Status](https://dev.azure.com/bitcraze/Bitcraze/_apis/build/status/bitcraze.keyrings.artifacts?branchName=main)](https://dev.azure.com/bitcraze/Bitcraze/_build/latest?definitionId=1&branchName=main)
+[![Build Status](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml)
 [![PyPI version](https://badge.fury.io/py/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
