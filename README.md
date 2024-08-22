@@ -1,16 +1,19 @@
 # Keyring for Azure DevOps Artifacts
 
 [![Build Status](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml)
+[![Tests](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/test.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
 [![PyPI version](https://badge.fury.io/py/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
-[![PyPI - License](https://img.shields.io/pypi/l/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
+[![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square)](LICENSE)
 
 ## Overview
 
-The `keyrings.artifacts` package provides a secure and efficient way to manage credentials for Azure DevOps Artifacts. It includes a keyring backend that supports various authentication methods and stores credentials in an encrypted file. The package is a platform-agnostic, plain Python implementation of the original [artifact-keyring](https://github.com/Microsoft/artifacts-keyring) package, without its dependency on `DotNet`.
+The `keyrings.artifacts` backend integrates with the `keyring` library to provide authentication for publishing or consuming Python packages to or from Azure Artifacts feeds within [Azure DevOps](https://azure.com/devops). The package is a platform-agnostic, plain Python implementation of the original [artifact-keyring](https://github.com/Microsoft/artifacts-keyring) package, without its dependency on `DotNet`.
 
-The package is designed to be used with the [`pixi`](https://pixi.sh/latest/), [`uv`](https://docs.astral.sh/uv/) or [`pip`](https://pip.pypa.io/en/stable/)package manager to authenticate with Azure DevOps Artifacts. It provides a secure and convenient way to store and retrieve credentials without exposing them in the source code or local configuration files.
+The package is designed to be used with the [`pixi`](https://pixi.sh/latest/), [`uv`](https://docs.astral.sh/uv/) or [`pip`](https://pip.pypa.io/en/stable/) package manager to authenticate with Azure DevOps Artifacts. It provides a secure and convenient way to store and retrieve credentials without exposing them in the source code or local configuration files.
 
 Detailed documentation on how to setup the usage can be found in the respective package manager documentation:
 
@@ -21,7 +24,20 @@ Detailed documentation on how to setup the usage can be found in the respective 
 - `uv` is available in the [uv documentation](https://docs.astral.sh/uv/guides/integration/alternative-indexes/#using-keyring).
 
 
-# Installation
+## How It Works
+
+The `keyrings.artifacts` package extends the `keyring` library to securely manage credentials for Azure DevOps Artifacts. It connects to the service using private access tokens, which can be provided via the `AZURE_DEVOPS_EXT_PAT` environment variable or obtained interactively on first use. The token is securely stored in the system keyring and automatically refreshed upon expiration.
+
+- **Windows**: Stored in Windows Credential Manager.
+- **macOS**: Stored in macOS Keychain.
+- **Linux**: Stored in Secret Service API via `dbus` or in an encrypted file using `keyrings.alt.EncryptedKeyring`.
+
+This token is then used to authenticate and manage package publishing or consumption with Azure DevOps Artifacts.
+
+> **Note:** For more information on setting up and configuring system keyrings, refer to the [keyring documentation](https://keyring.readthedocs.io/en/latest/).
+
+
+## Installation
 
 Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyrings.artifacts` package system-wide is to use `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)) or `pipx`:
 
@@ -40,8 +56,28 @@ $ pipx install keyring --index-url https://pypi.org/simple
 $ pipx inject keyring keyrings.artifacts --index-url https://pypi.org/simple
 ```
 
+## Usage
 
-----
+### Command Line
+
+If you don't have a token stored in the system keyring, you can fetch and store it interactively using the `keyring` command line tool:
+
+```bash
+$ keyring get https://pkgs.dev.azure.com/{organization}/{project}/_packaging/{feed}/pypi/simple/ VssSessionToken
+```
+
+If you already have a token stored in the system keyring and want to update it, you can use the `keyring` command line tool:
+
+```bash
+# first delete the existing token
+$ keyring del https://pkgs.dev.azure.com/{organization}/{project}/_packaging/{feed}/pypi/simple/ VssSessionToken
+# then fetch and store the new token
+$ keyring get https://pkgs.dev.azure.com/{organization}/{project}/_packaging/{feed}/pypi/simple/ VssSessionToken
+```
+
+> **Note:** `keyrings.artifacts` package handles the token refresh of expired tokens automatically, so you don't need to worry about it. 🤓
+
+---
 
 ## Contributing
 
