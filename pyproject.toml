@@ -40,7 +40,6 @@ dev = [
   "black>=24.8.0,<25",
   "pre-commit>=3.8.0,<4",
 ]
-ci = ["genbadge[tests,coverage]>=1.1.1,<2"]
 
 [tool.pixi.pypi-dependencies]
 keyrings_artifacts = { path = ".", editable = true }
@@ -76,7 +75,6 @@ platforms = ["linux-64", "osx-64", "win-64"]
 
 [tool.pixi.environments]
 dev = { features = ["dev"], solve-group = "default" }
-ci = { features = ["ci"], solve-group = "default" }
 
 [tool.pixi.tasks]
 post-install = "pre-commit install"
