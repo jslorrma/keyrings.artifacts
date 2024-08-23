@@ -14,6 +14,10 @@ The `keyrings.artifacts` backend integrates with the `keyring` library to provid
 
 The package is designed to be used with the [`pixi`](https://pixi.sh/latest/), [`uv`](https://docs.astral.sh/uv/) or [`pip`](https://pip.pypa.io/en/stable/) package manager to authenticate with Azure DevOps Artifacts. It provides a secure and convenient way to store and retrieve credentials without exposing them in the source code or local configuration files.
 
+## Disclaimer
+
+**Warning:** This package is in an early development stage and may contain bugs or other issues. It is recommended to use this package for local development and testing purposes only, and not in production environments or CI pipelines. Please report any issues or bugs you encounter to help us improve the package.
+
 ## Acknowledgements
 
 This package was heavily inspired by a pull request of [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) in Microsoft's `artifacts-keyring` repository and their [idea of a plain Python version]((https://github.com/microsoft/artifacts-keyring/pull/56)). Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.

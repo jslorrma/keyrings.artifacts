@@ -103,7 +103,7 @@ cmd = "pre-commit run --all-files"
 [tool.pixi.feature.dev.tasks.bump-version]
 # Bump the project version using Hatch
 # Usage: pixi run -e dev bump-version [patch|minor|major],[dev]
-cmd = "pixi exec hatch version && pixi update"
+cmd = "pixi exec hatch version"
 
 [tool.pixi.feature.dev.tasks.build-sdist]
 # Build the source distribution (sdist) using Hatch
