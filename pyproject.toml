@@ -121,6 +121,12 @@ cmd = "pixi exec hatch build -t wheel"
 inputs = ["src/**/*", "pyproject.toml"]
 outputs = ["dist/*.whl"]
 
+[tool.pixi.feature.dev.tasks.build]
+# Build the wheel and ource distribution (sdist) distribution using Hatch
+cmd = "pixi exec hatch build -t wheel -t sdist"
+inputs = ["src/**/*", "pyproject.toml"]
+outputs = ["dist/*.whl", "dist/*.tar.gz"]
+
 [tool.pixi.feature.dev.tasks.requirements-export]
 # Export dependencies to requirements.txt
 cmd = "bitc_helper export-requirements requirements"
