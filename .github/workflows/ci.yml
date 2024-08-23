@@ -10,63 +10,69 @@ on:
 
 jobs:
   lint:
+    name: >-
+      Lint the codebase 🧹 with ruff
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout the codebase 📥
         uses: actions/checkout@v3
 
-      - name: Set up pixi
+      - name: Set up the pixi environment 🌟
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: dev
 
-      - name: Code linting with ruff check
+      - name: Run code linting with ruff check 🔍
         run: pixi run -e dev ruff-check
 
-      - name: Code formatting with ruff format
+      - name: Format the code with ruff format 🎨
         run: pixi run -e dev format
 
   test:
+    name: >-
+      Run tests 🧪 and upload coverage report 📊
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout the codebase 📥
         uses: actions/checkout@v3
 
-      - name: Set up pixi
+      - name: Set up the pixi environment 🌟
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: dev
 
-      - name: Run tests
+      - name: Execute tests 🧪
         run: pixi run -e dev test
 
-      - name: Upload coverage report
+      - name: Upload the coverage report 📊
         uses: actions/upload-artifact@v3
         with:
           name: coverage-report
           path: coverage.xml
 
   version-check:
+    name: >-
+      Check if the version has changed 🔄
     runs-on: ubuntu-latest
     outputs:
       version-changed: ${{ steps.version-metadata.outputs.changed }}
       new-version: ${{ steps.version-metadata.outputs.newVersion }}
     steps:
-      - name: Checkout code
+      - name: Checkout the codebase 📥
         uses: actions/checkout@v3
 
-      - name: Get current version
+      - name: Retrieve the current version 🕵️‍♂️
         id: get-version
         run: |
           echo "current_version=$(grep -Po '(?<=^__version__ = ")[^"]*' src/keyrings_artifacts/_version.py)" >> $GITHUB_ENV
 
-      - name: Get previous version
+      - name: Fetch the previous version from tags 🏷️
         id: get-previous-version
         run: |
           git fetch --tags
           echo "previous_version=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
-      - name: Compare versions
+      - name: Compare the current and previous versions 🔄
         id: version-metadata
         run: |
           if [ "$current_version" != "$previous_version" ]; then
@@ -77,24 +83,53 @@ jobs:
           fi
 
   build:
+    name: >-
+      Build the Python 🐍 package 📦
     runs-on: ubuntu-latest
     needs: version-check
     if: needs.version-check.outputs.version-changed == 'true'
     steps:
-      - name: Checkout code
+      - name: Checkout the codebase 📥
         uses: actions/checkout@v3
 
-      - name: Set up pixi
+      - name: Set up the pixi environment 🌟
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: ci
 
-      - name: Build package
-        run: pixi run -e dev build-wheel
+      - name: Build the package 📦
+        run: pixi run -e dev build
 
-      - name: Publish to GitHub Packages
-        run: |
-          pixi run -e ci twine upload --repository github dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.CI_PACKAGE_TOKEN }}
+      - name: Store the distribution packages 📦
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-testpypi:
+    name: >-
+      Publish the Python 🐍 distribution 📦 to TestPyPI
+    needs:
+      - version-check
+      - build
+    runs-on: ubuntu-latest
+    if: needs.version-check.outputs.version-changed == 'true'
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/keyrings.artifacts
+
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
+
+    steps:
+      - name: Download all the distribution packages 📦
+        uses: actions/download-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish the distribution 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
