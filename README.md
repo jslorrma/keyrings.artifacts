@@ -14,6 +14,12 @@ The `keyrings.artifacts` backend integrates with the `keyring` library to provid
 
 The package is designed to be used with the [`pixi`](https://pixi.sh/latest/), [`uv`](https://docs.astral.sh/uv/) or [`pip`](https://pip.pypa.io/en/stable/) package manager to authenticate with Azure DevOps Artifacts. It provides a secure and convenient way to store and retrieve credentials without exposing them in the source code or local configuration files.
 
+## Acknowledgements
+
+This package was heavily inspired by a pull request of [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) in Microsoft's `artifacts-keyring` repository and their [idea of a plain Python version]((https://github.com/microsoft/artifacts-keyring/pull/56)). Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.
+
+## Installation
+
 Detailed documentation on how to setup the usage can be found in the respective package manager documentation:
 
 > **Note:** As the `keyrings.artifacts` package is a drop-in replacement for the original `artifact-keyring` package, the usage is the same. The only difference is the package name and the installation method (see [below](#installation)).
@@ -22,26 +28,16 @@ Detailed documentation on how to setup the usage can be found in the respective 
 - `pixi` is available in the [Pixi documentation](https://pixi.sh/latest/advanced/authentication/#installing-keyring) section.
 - `uv` is available in the [uv documentation](https://docs.astral.sh/uv/guides/integration/alternative-indexes/#using-keyring).
 
-## Kudos
+Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyring` with `keyrings.artifacts`-backend system-wide is to use `pixi`, `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)) or `pipx`:
 
-This package was heavily inspired by a pull request of [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) in Microsoft's `artifacts-keyring` repository and their [idea of a plain Python version]((https://github.com/microsoft/artifacts-keyring/pull/56)). Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.
+### pixi
 
-## How It Works
+> **Note:** `pixi` does not yet support global multi-package installations (it's planned for the future, see the [Pixi Global Manifest](https://pixi.sh/dev/design_proposals/pixi_global_manifest/)). To work around this, since `keyrings.artifacts` depends on `keyring`, you need to globally install `keyrings.artifacts` and then link the `keyring` executable to the `pixi` bin directory.
 
-The `keyrings.artifacts` package extends the `keyring` library to securely manage credentials for Azure DevOps Artifacts. It connects to the service using private access tokens, which can be provided via the `AZURE_DEVOPS_EXT_PAT` environment variable or obtained interactively on first use. The token is securely stored in the system keyring and automatically refreshed upon expiration.
-
-- **Windows**: Stored in Windows Credential Manager.
-- **macOS**: Stored in macOS Keychain.
-- **Linux**: Stored in Secret Service API via `dbus` or in an encrypted file using `keyrings.alt.EncryptedKeyring`.
-
-This token is then used to authenticate and manage package publishing or consumption with Azure DevOps Artifacts.
-
-> **Note:** For more information on setting up and configuring system keyrings, refer to the [keyring documentation](https://keyring.readthedocs.io/en/latest/).
-
-
-## Installation
-
-Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyrings.artifacts` package system-wide is to use `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)) or `pipx`:
+```bash
+# Install keyrings.artifacts globally and link the keyring executable
+pixi global install keyrings.artifacts && ln -s ~/.pixi/envs/artifacts-keyring/bin/keyring ~/.pixi/bin/
+```
 
 ### uv
 ```bash
@@ -78,6 +74,57 @@ $ keyring get https://pkgs.dev.azure.com/{organization}/{project}/_packaging/{fe
 ```
 
 > **Note:** `keyrings.artifacts` package handles the token refresh of expired tokens automatically, so you don't need to worry about it. 🤓
+
+## How It Works
+
+The `keyrings.artifacts` package extends the `keyring` library to securely manage credentials for Azure DevOps Artifacts. It supports authentication using either bearer tokens or personal access tokens (PATs), configurable via the `KEYRINGS_ARTIFACTS_USE_BEARER_TOKEN` environment variable (default is `False`).
+
+#### Authentication Methods
+
+The package supports two authentication methods:
+
+1. **Bearer Token Authentication**:
+    Set `KEYRINGS_ARTIFACTS_USE_BEARER_TOKEN` to `True` to use bearer tokens.
+    Authentication methods for obtaining a bearer token include:
+    - Using environment variables for the `EnvironmentCredential` provider. This provider is capable of authenticating as a service principal using a client secret or a certificate, or as a user with a username and password, and requires setting a few environment variables. [Learn more](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python)
+    - Requesting a token from the Azure CLI (requires prior `az login`). [Learn more](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.azureclicredential?view=azure-python)
+    - Shared token cache. [Learn more](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.sharedtokencachecredential?view=azure-python)
+    - Interactive browser-based authentication. [Learn more](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.interactivebrowsercredential?view=azure-python)
+    - Device code authentication. [Learn more](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.devicecodecredential?view=azure-python)
+
+
+2. **Personal Access Token (PAT) Authentication**:
+    To use a personal access token (PAT), set `KEYRINGS_ARTIFACTS_USE_BEARER_TOKEN` to `False`. The package will automatically manage the PAT as follows:
+    - If the `AZURE_DEVOPS_EXT_PAT` environment variable is set, this token will be used.
+    - If `AZURE_DEVOPS_EXT_PAT` is not set, the package will look for a stored PAT in the system keyring.
+    - If no PAT is found, a new PAT will be generated and stored in the system keyring. The duration of the PAT can be configured using the `AZURE_DEVOPS_PAT_DURATION` environment variable (default is 365 days).
+
+      > **Note:** To generate a new PAT, an intermediate bearer token authentication is required. The bearer token can be obtained using any of the methods mentioned [above](#authentication-methods).
+
+    Any new PAT will be stored in the system keyring for future use. Depending on the operating system, the following keyrings are used:
+    - **Windows**: Stored in Windows Credential Manager.
+    - **macOS**: Stored in macOS Keychain.
+    - **Linux**: Stored in the Secret Service API via `dbus` or in an encrypted file using `keyrings.alt.EncryptedKeyring`.
+
+    > **Note:** For more information on setting up and configuring system keyrings, refer to the [keyring documentation](https://keyring.readthedocs.io/en/latest/).
+
+### Configuration Guidelines
+
+#### Environment Variables
+
+1. General Configuration:
+
+   - `KEYRINGS_ARTIFACTS_USE_BEARER_TOKEN`: Set to `True` to use bearer tokens, `False` to use PATs (default is `False`).
+
+2. Personal Access Token (PAT) Configuration:
+
+   - `AZURE_DEVOPS_EXT_PAT`: This environment variable can be used to set a PAT for the package to use.
+   - `AZURE_DEVOPS_PAT_DURATION`: If a new PAT is generated, this environment variable sets the duration of the PAT in days (default is 365 days).
+
+3. Bearer Token Configuration:
+
+   - Details about the environment variables required for the `EnvironmentCredential` provider can be found in the [Azure Identity documentation](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python).
+
 
 ---
 
