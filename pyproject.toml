@@ -103,7 +103,7 @@ cmd = "pre-commit run --all-files"
 [tool.pixi.feature.dev.tasks.bump-version]
 # Bump the project version using Hatch
 # Usage: pixi run -e dev bump-version [patch|minor|major],[dev]
-cmd = "pixi exec hatch version"
+cmd = "pixi exec hatch version && pixi update"
 
 [tool.pixi.feature.dev.tasks.build-sdist]
 # Build the source distribution (sdist) using Hatch
@@ -126,6 +126,11 @@ outputs = ["dist/*.whl"]
 cmd = "pixi exec hatch build -t wheel -t sdist"
 inputs = ["src/**/*", "pyproject.toml"]
 outputs = ["dist/*.whl", "dist/*.tar.gz"]
+
+[tool.pixi.feature.dev.tasks.release]
+# Release the project to PyPI using Hatch
+# Usage: pixi run -e dev release
+cmd = "version=$(pixi exec hatch version) && git tag -a v$version -m 'Release v$version' && git push origin v$version"
 
 [tool.pixi.feature.dev.tasks.requirements-export]
 # Export dependencies to requirements.txt
