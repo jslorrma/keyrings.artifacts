@@ -18,6 +18,7 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
+import os
 import webbrowser
 from typing import Any
 
@@ -25,6 +26,7 @@ from azure.identity import (
     AzureCliCredential,
     ChainedTokenCredential,
     DeviceCodeCredential,
+    EnvironmentCredential,
     InteractiveBrowserCredential,
     SharedTokenCacheCredential,
 )
@@ -38,6 +40,7 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
     A credential chain that is composed of multiple credentials.
 
     The following credential types are chained:
+    - EnvironmentCredential
     - AzureCliCredential
     - SharedTokenCacheCredential
     - InteractiveBrowserCredential
@@ -60,8 +63,6 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
         (From https://github.com/microsoft/artifacts-credprovider/blob/cdc427e8236212b33041b4276961855b39bbe98d/CredentialProvider.Microsoft/CredentialProviders/Vsts/MSAL/MsalTokenProviderFactory.cs#L11)
     with_az_cli : bool, optional
         Whether to include the Azure CLI credential in the chain. Default is True.
-    non_interactive : bool, optional
-        Whether to disable the interactive browser credential. Default is False.
     """
 
     def __init__(  # noqa: PLR0913
@@ -73,43 +74,47 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
         process_timeout: int = 90,
         scope: str = DEFAULT_SCOPE,
         with_az_cli: bool = True,
-        non_interactive: bool = False,
     ):
         self.scope = scope
 
-        super().__init__(
+        cred_chain = [
             *[
-                *[
-                    AzureCliCredential(
-                        tenant_id=tenant_id,
-                        additionally_allowed_tenants=additionally_allowed_tenants,
-                    )
-                    # add Azure CLI credential if with_az_cli is True
-                    if with_az_cli
-                    else []
-                ],
-                SharedTokenCacheCredential(
-                    exclude_environment_credential=False,
-                    exclude_managed_identity_credential=True,
+                # add environment credential if mandatory  environment variable
+                # "AZURE_CLIENT_ID" is set
+                EnvironmentCredential() if os.getenv("AZURE_CLIENT_ID") else []
+            ],
+            *[
+                AzureCliCredential(
+                    tenant_id=tenant_id,
+                    additionally_allowed_tenants=additionally_allowed_tenants,
+                )
+                # add Azure CLI credential if with_az_cli is True
+                if with_az_cli
+                else []
+            ],
+            SharedTokenCacheCredential(
+                exclude_environment_credential=False,
+                exclude_managed_identity_credential=True,
+                authority=authority,
+            ),
+            *[
+                InteractiveBrowserCredential(
                     authority=authority,
-                ),
-                *[
-                    InteractiveBrowserCredential(
-                        authority=authority,
-                        tenant_id=tenant_id,
-                        client_id=devicecode_client_id,
-                    )
-                    # add interactive browser credential if a browser is available
-                    if not non_interactive and self._is_interactive_browser_possible()
-                    else []
-                ],
-                DeviceCodeCredential(
                     tenant_id=tenant_id,
                     client_id=devicecode_client_id,
-                    process_timeout=process_timeout,
-                ),
-            ]
-        )
+                )
+                # add interactive browser credential if a browser is available
+                if self._is_interactive_browser_possible()
+                else []
+            ],
+            DeviceCodeCredential(
+                tenant_id=tenant_id,
+                client_id=devicecode_client_id,
+                process_timeout=process_timeout,
+            ),
+        ]
+
+        super().__init__(*(cred for cred in cred_chain if cred))
 
     def _is_interactive_browser_possible(self):
         """Check if the interactive browser credential is possible."""
