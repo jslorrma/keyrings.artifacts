@@ -42,13 +42,13 @@ jobs:
           environments: dev
 
       - name: Execute tests 🧪
-        run: pixi run -e dev test
+        run: pixi run -e dev test-reports
 
       - name: Upload the coverage report 📊
         uses: actions/upload-artifact@v3
         with:
-          name: coverage-report
-          path: coverage.xml
+          name: test-reports
+          path: reports/
 
   version-check:
     name: >-

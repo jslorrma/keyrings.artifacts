@@ -40,9 +40,7 @@ dev = [
   "black>=24.8.0,<25",
   "pre-commit>=3.8.0,<4",
 ]
-
-[tool.pixi.feature.ci.dependencies]
-twine = ">=5.1.1,<6"
+ci = ["genbadge[tests,coverage]>=1.1.1,<2"]
 
 [tool.pixi.pypi-dependencies]
 keyrings_artifacts = { path = ".", editable = true }
@@ -86,7 +84,11 @@ post-install = "pre-commit install"
 
 [tool.pixi.feature.dev.tasks.test]
 # Run tests with pytest and generate a coverage report in XML format
-cmd = "pytest -s -v --cov && coverage xml"
+cmd = "pytest -s -v --cov"
+
+[tool.pixi.feature.dev.tasks.test-reports]
+# Run tests with pytest and generate a coverage report in XML format
+cmd = "pytest -s -v --cov-report=xml:reports/coverage.xml --junitxml=reports/junit.xml --html=reports/report.html"
 
 [tool.pixi.feature.dev.tasks.ruff-check]
 # Format code using Ruff
