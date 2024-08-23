@@ -1,13 +1,12 @@
 # Keyring for Azure DevOps Artifacts
 
-[![Build Status](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/build.yml)
-[![Tests](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/bitcraze/keyrings.artifacts/actions/workflows/test.yml)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
+[![Build Status](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square)](LICENSE)
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ## Overview
 
@@ -25,7 +24,7 @@ Detailed documentation on how to setup the usage can be found in the respective 
 
 ## Kudos
 
-Special thanks to [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) for their [PR](https://github.com/microsoft/artifacts-keyring/pull/56) in Microsoft's `artifacts-keyring` repository. This package was heavily inspired by their PR and their idea of a plain Python version. Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.
+This package was heavily inspired by a pull request of [tomporaer](https://github.com/temporaer) and [javuc1](https://github.com/javuc1) in Microsoft's `artifacts-keyring` repository and their [idea of a plain Python version]((https://github.com/microsoft/artifacts-keyring/pull/56)). Since the PR has not been merged since February 2023, it seems unlikely that it will be merged, which led to the decision to create this package.
 
 ## How It Works
 
