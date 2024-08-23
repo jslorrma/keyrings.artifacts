@@ -21,6 +21,7 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: dev
+          locked: false
 
       - name: Run code linting with ruff check 🔍
         run: pixi run -e dev ruff-check
@@ -40,6 +41,7 @@ jobs:
         uses: prefix-dev/setup-pixi@v0.8.1
         with:
           environments: dev
+          locked: false
 
       - name: Execute tests 🧪
         run: pixi run -e dev test-reports
