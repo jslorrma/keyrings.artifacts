@@ -12,13 +12,14 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
+import os
 import warnings
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 import keyring.credentials
 
-from .plugin import CredentialProvider
+from .provider import CredentialProvider
 
 
 class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
@@ -86,19 +87,23 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
             return None
 
         provider = self._PROVIDER()
+        use_bearer_token = os.getenv(provider._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true"
 
-        # Check if credentials are already stored in the local keyring
-        stored_password = self._LOCAL_BACKEND.get_password(service, username)
+        if not use_bearer_token and username:
+            # Check if credentials are already stored in the local keyring
+            stored_password = self._LOCAL_BACKEND.get_password(service, username)
 
-        if stored_password and provider._can_authenticate(service, (self._PROVIDER.username, stored_password)):
-            return keyring.credentials.SimpleCredential(username, stored_password)
+            if stored_password and provider._can_authenticate(service, (self._PROVIDER.username, stored_password)):
+                return keyring.credentials.SimpleCredential(username, stored_password)
 
+        # else or if the stored password is not valid, try to retrieve the credentials from the provider
         username, password = provider.get_credentials(service)
 
         if username and password:
-            # Store the retrieved credentials in the local keyring
-            self._LOCAL_BACKEND.set_password(service, username, password)
-            self._cache[service, username] = password
+            if not use_bearer_token:
+                # Store the retrieved username and PAT in the local keyring
+                self._LOCAL_BACKEND.set_password(service, username, password)
+                self._cache[service, username] = password
             return keyring.credentials.SimpleCredential(username, password)
 
     def get_password(self, service: str, username: str) -> str | None:

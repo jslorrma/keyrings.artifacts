@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/plugin.py
+keyrings_artifacts/provider.py
 ---------------------------
 
 This module implements the CredentialProvider class which is a Azure credential providers for
@@ -24,6 +24,10 @@ from requests.exceptions import HTTPError, RequestException
 
 from .support import AzureCredentialWithDevicecode
 
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 logging.getLogger("azure.identity._credentials.managed_identity").setLevel(logging.ERROR)
 logging.getLogger("azure.identity._credentials.environment").setLevel(logging.ERROR)
 logging.getLogger("azure.identity._credentials.vscode").setLevel(logging.ERROR)
@@ -32,13 +36,13 @@ logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(l
 
 class CredentialProvider:
     """
-    Keyring plugin for Azure DevOps Artifacts.
+    Credential provider for Azure DevOps Artifacts.
 
     This plugin provides credentials for Azure DevOps Artifacts.
     """
 
-    # Non-interactive mode global variable
-    _NON_INTERACTIVE_VAR_NAME = "keyrings_artifacts_NONINTERACTIVE_MODE"
+    # Non-PAT, bearer token mode
+    _USE_BEARER_TOKEN_VAR_NAME = "KEYRINGS_ARTIFACTS_USE_BEARER_TOKEN"
 
     # ADO global variables
     _PAT_ENV_VAR = "AZURE_DEVOPS_EXT_PAT"
@@ -113,14 +117,12 @@ class CredentialProvider:
         3) Interactive Browser
         4) DeviceCode flow
         """
-        _non_interactive = (os.getenv(self._NON_INTERACTIVE_VAR_NAME, "False").lower() == "true",)
         try:
             token = (
                 AzureCredentialWithDevicecode(
                     tenant_id=tenant_id,
                     authority=authority,
-                    devicecode_client_id=client_id,
-                    non_interactive=_non_interactive,
+                    devicecode_client_id=client_id
                 )
                 .get_token(scope)
                 .token
@@ -128,26 +130,16 @@ class CredentialProvider:
         except ClientAuthenticationError as e:
             if "Azure Active Directory error" not in str(e):
                 raise e
-            #
             # DefaultAzureCredential raises an exception when there is a token
-            # found in the cache but the token has expired. This issue has
-            # been raised https://github.com/Azure/azure-sdk-for-python/issues/21718#issuecomment-974225195
-            # and it is a design choice of the azure-identity developers. However,
-            # for our use case, the fallback below requires user intervention and therefore
-            # the concerns about accidentally operating on the incorrect account are not
-            # applicable. Hence we explicitly catch the error and initiate the
-            # DeviceCode flow. This behaviour is the same as re-running the command
-            # with `MSAL_EXCLUDE_SHARED_TOKEN_CACHE=True`, which has the same effect as
-            # the suggestion linked in the GH issue above.
-            #
-            print(f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow.")
+            # found in the cache but the token has expired. In this case we catch the error and
+            # initiate the an Interactive Browser flow if possible or fall back to the DeviceCode flow.
+            logger.warning(f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow.")
             token = (
                 AzureCredentialWithDevicecode(
                     authority=authority,
                     tenant_id=tenant_id,
                     client_id=client_id,
-                    with_az_cli=False,
-                    non_interactive=_non_interactive,
+                    with_az_cli=False
                 )
                 .get_token(scope)
                 .token
@@ -201,6 +193,8 @@ class CredentialProvider:
     def _get_credentials_from_credential_provider(self, url: str) -> tuple[str | None, str | None]:
         """Get the credentials from the credential provider."""
 
+        # get username
+        username = os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
         # get authorities
         self._oauth_authority, self._vsts_authority = self._get_authorities(url)
         # split oauth authority to get tenant_id
@@ -215,11 +209,12 @@ class CredentialProvider:
             exclude_shared_token_cache=self._exclude_shared_token_cache,
             scope=self._OUATH_SCOPE,
         )
-        pat = self._exchange_bearer_for_pat(bearer_token)
+        if os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true":
+            return username, bearer_token
 
-        username = os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
-        password = pat
-        return username, password
+        # else exchange bearer token for PAT
+        pat = self._exchange_bearer_for_pat(bearer_token)
+        return username, pat
 
     def get_credentials(self, url: str) -> tuple[str | None, str | None]:
         """
@@ -241,10 +236,11 @@ class CredentialProvider:
             return None, None
 
         # Return personal access token if available
-        if os.environ.get(self._PAT_ENV_VAR):
+        if os.environ.get(self._PAT_ENV_VAR) and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false":
+            # Return the username and password from the environment variables
             return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(self._PAT_ENV_VAR)
 
-        # Getting credentials with IsRetry=false; the credentials may come from the cache
+        # Getting credentials; the credentials may come from the cache
         username, password = self._get_credentials_from_credential_provider(url)
 
         # Do not attempt to validate if the credentials could not be obtained

@@ -33,7 +33,7 @@ def get_credentials(mocker, username, password):
     """
     Mock the get_credentials method of the CredentialProvider class.
     """
-    mocker.patch('keyrings_artifacts.plugin.CredentialProvider.get_credentials', return_value=(username, password))
+    mocker.patch('keyrings_artifacts.provider.CredentialProvider.get_credentials', return_value=(username, password))
 
 @pytest.mark.parametrize("service, username, password", [
     ("https://pkgs.dev.azure.com/org/project/_packaging/feed/pypi/upload", "username1", "password1"),
