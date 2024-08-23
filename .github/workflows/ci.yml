@@ -68,11 +68,12 @@ jobs:
         run: |
           echo "current_version=$(grep -Po '(?<=^__version__ = ")[^"]*' src/keyrings_artifacts/_version.py)" >> $GITHUB_ENV
 
-      - name: Fetch the previous version from tags 🏷️
+      - name: Fetch the previous version from TestPyPI 🏷️
         id: get-previous-version
         run: |
-          git fetch --tags
-          echo "previous_version=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          package_name=$(grep -Po '(?<=^name = ")[^"]*' pyproject.toml)
+          previous_version=$(curl -s https://test.pypi.org/pypi/$package_name/json | jq -r '.releases | keys | .[-1]')
+          echo "previous_version=$previous_version" >> $GITHUB_ENV
 
       - name: Compare the current and previous versions 🔄
         id: version-metadata
