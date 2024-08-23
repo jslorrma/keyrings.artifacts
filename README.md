@@ -22,11 +22,14 @@ This package was heavily inspired by a pull request of [tomporaer](https://githu
 
 Detailed documentation on how to setup the usage can be found in the respective package manager documentation:
 
-> **Note:** As the `keyrings.artifacts` package is a drop-in replacement for the original `artifact-keyring` package, the usage is the same. The only difference is the package name and the installation method (see [below](#installation)).
+> **Note:** As the `keyrings.artifacts` package is a drop-in replacement for the original `artifact-keyring` package and it supports the same methods (and more). To use the `keyrings.artifacts` package, follow the same installation and configuration instructions provided in the listed documentations below, but replace the package name accordingly.
 
 - `pip` is available in the [pip documentation](https://pip.pypa.io/en/stable/topics/authentication/#using-keyring-as-a-command-line-application).
 - `pixi` is available in the [Pixi documentation](https://pixi.sh/latest/advanced/authentication/#installing-keyring) section.
 - `uv` is available in the [uv documentation](https://docs.astral.sh/uv/guides/integration/alternative-indexes/#using-keyring).
+
+
+### System-Wide Installation
 
 Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyring` with `keyrings.artifacts`-backend system-wide is to use `pixi`, `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)) or `pipx`:
 
