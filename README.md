@@ -1,15 +1,16 @@
 # Keyring for Azure DevOps Artifacts
 
-[![Build Status](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
-[![Conda Latest Release](https://anaconda.org/conda-forge/keyrings.artifacts/badges/version.svg)](https://prefix.dev/channels/conda-forge/packages/keyrings.artifacts)
-[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/keyrings.artifacts.svg?label=Conda%20downloads)](
+[![GitHub branch check runs](https://img.shields.io/github/check-runs/jslorrma/keyrings.artifacts/main?style=flat-square&logo=GitHub&label=CI)](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/keyrings.artifacts.svg?label=PyPi%20version&style=flat-square)](https://badge.fury.io/py/keyrings.artifacts)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts?label=PyPi%20downloads&style=flat-square)](https://pypi.org/project/keyrings.artifacts/)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/keyrings.artifacts?style=flat-square&label=Conda%20version&color=104F8B
+)](https://prefix.dev/channels/conda-forge/packages/keyrings.artifacts)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/keyrings.artifacts.svg?label=Conda%20downloads&color=104F8B&style=flat-square)](
 https://prefix.dev/channels/conda-forge/packages/keyrings.artifacts)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts?style=flat-square)](https://pypi.org/project/keyrings.artifacts/)
 [![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square)](LICENSE)
-[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json)](https://pixi.sh)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json&style=flat-square)](https://pixi.sh)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
 
 ## Overview
 
