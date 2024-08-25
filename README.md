@@ -8,7 +8,7 @@
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/keyrings.artifacts.svg?label=Conda%20downloads&style=flat-square&logo=anaconda&logoColor=white)](
 https://prefix.dev/channels/conda-forge/packages/keyrings.artifacts)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts?style=flat-square&logo=python&label=Python%20version&logoColor=white)](https://pypi.org/project/keyrings.artifacts/)
-[![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square&label=License)](LICENSE)
 [![Pixi Badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/prefix-dev/pixi/main/assets/badge/v0.json&style=flat-square)](https://pixi.sh)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json&style=flat-square)](https://github.com/astral-sh/ruff)
 
