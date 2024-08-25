@@ -1507,9 +1507,9 @@ packages:
   requires_python: '>=3.8'
 - kind: pypi
   name: keyrings-artifacts
-  version: 0.3.2
+  version: 0.4.0
   path: .
-  sha256: 8802d03546d742a230de6aa4d5ec9a97f1f81dd7f4540ac0bbcaa93b03c94b3e
+  sha256: 9aceefa408ce6761e3698e911cd9c6af89035b744d18e217f4a50d65f9471280
   requires_dist:
   - azure-identity>=1.17.1
   - keyring>=16.0
@@ -2535,7 +2535,7 @@ packages:
   license: MIT
   license_family: MIT
   purls:
-  - pkg:pypi/pytest?source=compressed-mapping
+  - pkg:pypi/pytest?source=hash-mapping
   size: 257671
   timestamp: 1721923749407
 - kind: conda
@@ -2814,6 +2814,7 @@ packages:
   - python_abi 3.12.* *_cp312
   - zeromq >=4.3.5,<4.4.0a0
   license: BSD-3-Clause
+  license_family: BSD
   purls:
   - pkg:pypi/pyzmq?source=hash-mapping
   size: 362465
@@ -2835,6 +2836,7 @@ packages:
   - python_abi 3.12.* *_cp312
   - zeromq >=4.3.5,<4.4.0a0
   license: BSD-3-Clause
+  license_family: BSD
   purls:
   - pkg:pypi/pyzmq?source=hash-mapping
   size: 378212
@@ -2856,6 +2858,7 @@ packages:
   - vc14_runtime >=14.29.30139
   - zeromq >=4.3.5,<4.3.6.0a0
   license: BSD-3-Clause
+  license_family: BSD
   purls:
   - pkg:pypi/pyzmq?source=hash-mapping
   size: 361147
