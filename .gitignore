@@ -21,9 +21,6 @@ __pycache__/*
 .idea
 .vscode
 .env
-templates/**
-!templates/**/*.ipynb
-!templates/**/*.tex
 
 # Pytest
 .coverage
@@ -38,3 +35,4 @@ coverage.xml
 *.eggs/
 .installed.cfg
 *.egg-info
+dist/**
