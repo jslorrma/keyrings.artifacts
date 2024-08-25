@@ -1509,7 +1509,7 @@ packages:
   name: keyrings-artifacts
   version: 0.4.0
   path: .
-  sha256: 9aceefa408ce6761e3698e911cd9c6af89035b744d18e217f4a50d65f9471280
+  sha256: 2e0dfa25dacfdbcd49d25f7ad76be3478544c0d859a4913c75daafa66bdda30c
   requires_dist:
   - azure-identity>=1.17.1
   - keyring>=16.0
