@@ -31,6 +31,7 @@ from azure.identity import (
     SharedTokenCacheCredential,
 )
 
+# Azure DevOps application default scope
 # from https://github.com/microsoft/artifacts-credprovider/blob/cdc427e8236212b33041b4276961855b39bbe98d/CredentialProvider.Microsoft/CredentialProviders/Vsts/MSAL/MsalTokenProviderFactory.cs#L11
 DEFAULT_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
 
@@ -50,8 +51,6 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
     ----------
     tenant_id : str, optional
         Tenant id to include in the token request.
-    devicecode_client_id : str, optional
-        Client id for the device code credential.
     authority : str, optional
         Authority for the token request.
     additionally_allowed_tenants : list of str, optional
@@ -68,19 +67,19 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
     def __init__(  # noqa: PLR0913
         self,
         tenant_id: str = "",
-        devicecode_client_id: str = "",
         authority: str = "",
         additionally_allowed_tenants: list[str] | None = None,
-        process_timeout: int = 90,
+        process_timeout: int = 180,
         scope: str = DEFAULT_SCOPE,
         with_az_cli: bool = True,
     ):
         self.scope = scope
-
         cred_chain = [
             *[
-                # add environment credential if mandatory  environment variable
-                # "AZURE_CLIENT_ID" is set
+                # add environment credential if mandatory environment variable "AZURE_CLIENT_ID"
+                # is set. EnvironmentCredential supports authenticating with service principal using
+                # client secret, certificate, and managed identity. All three options require
+                # AZURE_CLIENT_ID to be set.
                 EnvironmentCredential() if os.getenv("AZURE_CLIENT_ID") else []
             ],
             *[
@@ -88,8 +87,10 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
                     tenant_id=tenant_id,
                     additionally_allowed_tenants=additionally_allowed_tenants,
                 )
-                # add Azure CLI credential if with_az_cli is True
-                if with_az_cli
+                # add Azure CLI credential if with_az_cli is True and tenant_id is set. If tenant_id
+                # is not set, the Azure DevOps organization seems to a personal Microsoft account
+                # without an Azure subscription, so the Azure CLI credential cannot be used.
+                if with_az_cli and tenant_id
                 else []
             ],
             SharedTokenCacheCredential(
@@ -99,9 +100,7 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
             ),
             *[
                 InteractiveBrowserCredential(
-                    authority=authority,
-                    tenant_id=tenant_id,
-                    client_id=devicecode_client_id,
+                    tenant_id=tenant_id
                 )
                 # add interactive browser credential if a browser is available
                 if self._is_interactive_browser_possible()
@@ -109,7 +108,6 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
             ],
             DeviceCodeCredential(
                 tenant_id=tenant_id,
-                client_id=devicecode_client_id,
                 process_timeout=process_timeout,
             ),
         ]

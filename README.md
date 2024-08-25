@@ -10,7 +10,7 @@
 
 ## Overview
 
-The `keyrings.artifacts` backend integrates with the `keyring` library to provide authentication for publishing or consuming Python packages to or from Azure Artifacts feeds within [Azure DevOps](https://azure.com/devops). The package is a platform-agnostic, plain Python implementation of the original [artifact-keyring](https://github.com/Microsoft/artifacts-keyring) package, without its dependency on `DotNet`.
+The `keyrings.artifacts` backend integrates with the `keyring` library to provide authentication for publishing or consuming Python packages to or from Azure Artifacts feeds within [Azure DevOps](https://azure.com/devops). The package is a platform-agnostic, plain Python implementation of the original [artifact-keyring](https://github.com/Microsoft/artifacts-keyring) package leverageging [azure-identity](https://learn.microsoft.com/en-us/python/api/overview/azure/identity-readme?view=azure-python), without its dependency on `DotNet`.
 
 The package is designed to be used with the [`pixi`](https://pixi.sh/latest/), [`uv`](https://docs.astral.sh/uv/) or [`pip`](https://pip.pypa.io/en/stable/) package manager to authenticate with Azure DevOps Artifacts. It provides a secure and convenient way to store and retrieve credentials without exposing them in the source code or local configuration files.
 
@@ -35,16 +35,7 @@ Detailed documentation on how to setup the usage can be found in the respective 
 
 ### System-Wide Installation
 
-Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyring` with `keyrings.artifacts`-backend system-wide is to use `pixi`, `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)) or `pipx`:
-
-### pixi
-
-> **Note:** `pixi` does not yet support global multi-package installations (it's planned for the future, see the [Pixi Global Manifest](https://pixi.sh/dev/design_proposals/pixi_global_manifest/)). To work around this, since `keyrings.artifacts` depends on `keyring`, you need to globally install `keyrings.artifacts` and then link the `keyring` executable to the `pixi` bin directory.
-
-```bash
-# Install keyrings.artifacts globally and link the keyring executable
-pixi global install keyrings.artifacts && ln -s ~/.pixi/envs/artifacts-keyring/bin/keyring ~/.pixi/bin/
-```
+Following the installation and configuration instructions in the pip documentation, keyring and third-party backends should best be installed system-wide. The simplest way to install the `keyring` with `keyrings.artifacts`-backend system-wide is to use `uv` (If don't know `uv` yet, I suggest you to check it out [here](https://docs.astral.sh/uv/)), `pipx` and `pixi` (not yet supported - see notes below):
 
 ### uv
 ```bash
@@ -59,6 +50,17 @@ $ pipx install keyring --index-url https://pypi.org/simple
 
 # Inject the keyrings.artifacts package
 $ pipx inject keyring keyrings.artifacts --index-url https://pypi.org/simple
+```
+
+### pixi
+
+> **Note:** `pixi` cannot be used yet because the `keyrings.artifacts` package is not available from conda-forge channel yet and `pixi global install` does not support installations from PyPI yet.
+
+> **Note:** `pixi` does not yet support global multi-package installations (it's planned for the future, see the [Pixi Global Manifest](https://pixi.sh/dev/design_proposals/pixi_global_manifest/)). To work around this, since `keyrings.artifacts` depends on `keyring`, you need to globally install `keyrings.artifacts` and then link the `keyring` executable to the `pixi` bin directory.
+
+```bash
+# Install keyrings.artifacts globally and link the keyring executable
+pixi global install keyrings.artifacts && ln -s ~/.pixi/envs/artifacts-keyring/bin/keyring ~/.pixi/bin/
 ```
 
 ## Usage
