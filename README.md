@@ -1,7 +1,7 @@
 # Keyring for Azure DevOps Artifacts
 
 [![Build Status](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jslorrma/keyrings.artifacts/actions/workflows/ci.yml)
-[![PyPI version](https://badge.fury.io/py/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
+[![PyPI version](https://img.shields.io/pypi/v/keyrings.artifacts.svg)](https://badge.fury.io/py/keyrings.artifacts)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/keyrings.artifacts)](https://pypi.org/project/keyrings.artifacts/)
 [![License](https://img.shields.io/github/license/jslorrma/keyrings.artifacts?style=flat-square)](LICENSE)
