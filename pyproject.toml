@@ -78,7 +78,6 @@ dev = { features = ["dev"], solve-group = "default" }
 [tool.pixi.tasks]
 post-install = "pre-commit install"
 
-
 [tool.pixi.feature.dev.tasks.test]
 # Run tests with pytest and generate a coverage report in XML format
 cmd = "pytest -s -v --cov"
@@ -129,7 +128,7 @@ outputs = ["dist/*.whl", "dist/*.tar.gz"]
 [tool.pixi.feature.dev.tasks.recipe]
 # Generate a conda recipe using grayskull
 # Usage: pixi run -e dev recipe
-cmd = "pixi exec grayskull pypi --strict-conda-forge keyrings.artifacts"
+cmd = "pixi exec grayskull pypi --strict-conda-forge --use-v1-format keyrings.artifacts"
 cwd = "recipe"
 
 [tool.pixi.feature.dev.tasks.release]
