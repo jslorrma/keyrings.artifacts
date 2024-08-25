@@ -15,6 +15,7 @@ __email__ = "jslorrma@gmail.com"
 
 import logging
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 
@@ -50,9 +51,9 @@ class CredentialProvider:
     _PAT_SCOPE_ENV_VAR = "AZURE_DEVOPS_PAT_SCOPE"
     _PAT_DURATION_ENV_VAR = "AZURE_DEVOPS_PAT_DURATION"
 
+    # Azure DevOps application default scope
     # from https://github.com/microsoft/artifacts-credprovider/blob/cdc427e8236212b33041b4276961855b39bbe98d/CredentialProvider.Microsoft/CredentialProviders/Vsts/MSAL/MsalTokenProviderFactory.cs#L11
-    _OAUTH_CLIENT_ID = "872cd9fa-d31f-45e0-9eab-6e460a02d1f1"
-    _OUATH_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
+    _OAUTH_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default"
 
     # PAT global variables
     # PAT API route
@@ -68,10 +69,6 @@ class CredentialProvider:
     # Default PAT scope
     _DEFAULT_VSTS_SCOPE = "vso.packaging_write"
 
-    def __init__(self) -> None:
-        self._oauth_authority: str | None = None
-        self._vsts_authority: str | None = None
-
     @property
     def username(self) -> str | None:
         """Get the username."""
@@ -79,8 +76,7 @@ class CredentialProvider:
 
     def _is_upload_endpoint(self, url: str) -> bool:
         """Check if the given URL is the upload endpoint."""
-        url = url[:-1] if url[-1] == "/" else url
-        return url.endswith("pypi/upload")
+        return url.rstrip('/').endswith("pypi/upload")
 
     def _can_authenticate(self, url: str, auth: tuple[str, str] | None) -> bool:
         """Check if the given URL can be authenticated with the given credentials."""
@@ -97,32 +93,37 @@ class CredentialProvider:
         response = requests.get(url)
         headers = response.headers
 
-        # extract oauth authority
-        bearer_authority = headers["WWW-Authenticate"].split(",")[0].replace("Bearer authorization_uri=", "")
-
-        # extract Visual Studo authority
-        pat_authority = headers["X-VSS-AuthorizationEndpoint"]
-        return bearer_authority, pat_authority
+        # extract oauth authority and tenant_id
+        match = re.search(r'Bearer authorization_uri=(https://[^/]+/)[^,]+', headers["WWW-Authenticate"])
+        if match:
+            bearer_authority = match.group(1)
+            tenant_id = match.group(0).rsplit("/",1)[1]
+        else:
+            # the Azure DevOps endpoint seems to be linked to a personal Microsoft account
+            # and only basic authentication or PAT is supported
+            bearer_authority = ""
+            tenant_id = ""
+        return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
 
     def _get_bearer_token(
-        self, authority: str, client_id: str, tenant_id: str, exclude_shared_token_cache: bool, scope: str
+        self, authority: str, tenant_id: str, scope: str
     ) -> str:
         """
         Get the bearer token for the given URL.
 
         This method is used to get the bearer token for the given URL. The token is obtained
         using the AzureCredentialWithDevicecode class which tries to optain the token from:
-        1) Azure CLI
-        2) Shared Token Cache
-        3) Interactive Browser
-        4) DeviceCode flow
+        1) Environment variables
+        2) Azure CLI
+        3) Shared Token Cache
+        4) Interactive Browser
+        5) DeviceCode flow
         """
         try:
             token = (
                 AzureCredentialWithDevicecode(
                     tenant_id=tenant_id,
-                    authority=authority,
-                    devicecode_client_id=client_id
+                    authority=authority
                 )
                 .get_token(scope)
                 .token
@@ -138,7 +139,6 @@ class CredentialProvider:
                 AzureCredentialWithDevicecode(
                     authority=authority,
                     tenant_id=tenant_id,
-                    client_id=client_id,
                     with_az_cli=False
                 )
                 .get_token(scope)
@@ -146,7 +146,7 @@ class CredentialProvider:
             )
         return token
 
-    def _exchange_bearer_for_pat(self, bearer_token: str) -> str:
+    def _exchange_bearer_for_pat(self, authority_endpoint: str, bearer_token: str) -> str:
         """Exchange the bearer token for a personal access token (PAT)."""
         try:
             # Build request headers
@@ -157,7 +157,7 @@ class CredentialProvider:
             }
 
             # Build the request URL
-            visual_studio_url = f"{self._vsts_authority.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
+            visual_studio_url = f"{authority_endpoint.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
 
             # Build the request payload
             _delta = timedelta(days=int(os.getenv(self._PAT_DURATION_ENV_VAR, self._DEFAULT_PAT_DURATION)))
@@ -169,13 +169,12 @@ class CredentialProvider:
                 "validTo": expiry,
                 "allOrgs": "false",
             }
-
             # Send request
             with requests.post(visual_studio_url, headers=request_headers, json=request_payload) as response:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
-                response_data = response.json()
 
-            return response_data["patToken"]["token"]
+                # Return the PAT token
+                return response.json()["patToken"]["token"]
 
         except HTTPError as http_err:
             print(f"HTTP error occurred: {http_err}")
@@ -195,25 +194,19 @@ class CredentialProvider:
 
         # get username
         username = os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
-        # get authorities
-        self._oauth_authority, self._vsts_authority = self._get_authorities(url)
-        # split oauth authority to get tenant_id
-        authority, _, tenant_id = self._oauth_authority.rpartition("/")
-        # exclude shared token cache
-        self._exclude_shared_token_cache = str(os.getenv("MSAL_EXCLUDE_SHARED_TOKEN_CACHE", "False")).lower() == "true"
-
+        # get authorities and tenant_id
+        oauth_authority, tenant_id, vsts_authority = self._get_authorities(url)
+        # get bearer token
         bearer_token = self._get_bearer_token(
-            authority=authority,
-            client_id=self._OAUTH_CLIENT_ID,
+            authority=oauth_authority,
             tenant_id=tenant_id,
-            exclude_shared_token_cache=self._exclude_shared_token_cache,
-            scope=self._OUATH_SCOPE,
+            scope=self._OAUTH_SCOPE,
         )
         if os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true":
             return username, bearer_token
 
         # else exchange bearer token for PAT
-        pat = self._exchange_bearer_for_pat(bearer_token)
+        pat = self._exchange_bearer_for_pat(vsts_authority, bearer_token)
         return username, pat
 
     def get_credentials(self, url: str) -> tuple[str | None, str | None]:
