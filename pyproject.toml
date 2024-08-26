@@ -134,7 +134,11 @@ outputs = ["dist/*.whl", "dist/*.tar.gz"]
 [tool.pixi.feature.dev.tasks.recipe]
 # Generate a conda recipe using grayskull
 # Usage: pixi run -e dev recipe
-cmd = "pixi exec grayskull pypi --strict-conda-forge keyrings.artifacts"
+cmd = """pixi exec grayskull pypi --strict-conda-forge --use-v1-format keyrings.artifacts \
+&& sed -i 's/\\${{ PYTHON }}/python/g' keyrings.artifacts/recipe.yaml \
+&& sed -i 's/- keyrings.artifacts/- keyrings_artifacts/g' keyrings.artifacts/recipe.yaml \
+&& sed -i '/- keyrings-alt >=5.0.0/d' keyrings.artifacts/recipe.yaml
+"""
 cwd = "recipe"
 
 [tool.pixi.feature.dev.tasks.release]
