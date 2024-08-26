@@ -27,8 +27,8 @@ dependencies = [
   "keyring>=16.0",
   "requests>=2.20.0",
   "azure-identity>=1.17.1",
-  "keyrings.alt>=5.0.2,<6",
-  "pycryptodomex>=3.20.0,<4",
+  "keyrings.alt>=5.0.0",
+  "pycryptodomex>=3.20.0",
 ]
 
 [tool.pixi.feature.dev.dependencies]
