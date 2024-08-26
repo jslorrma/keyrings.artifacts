@@ -51,6 +51,13 @@ keyrings_artifacts = { path = ".", editable = true }
 artifacts = "keyrings_artifacts.artifacts:ArtifactsKeyringBackend"
 crypt_file = "keyrings_artifacts.crypt_file:EncryptedKeyring_"
 
+#
+[project.scripts]
+# This entry installs the keyring script, when the package is installed as command-line tool.
+# Note: This project is a plugin for the keyring package and does not provide a command-line
+# tool, but the keyring package does. This entry is required to make this package installable
+# as a command-line tool.
+keyring = "keyring.cli:main"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Build System Configuration
