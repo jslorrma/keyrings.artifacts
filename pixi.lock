@@ -1507,7 +1507,7 @@ packages:
   requires_python: '>=3.8'
 - kind: pypi
   name: keyrings-artifacts
-  version: 0.4.2
+  version: 0.4.3
   path: .
   sha256: abd92b576e4a033796725b6bb79317587649884efa17e400f885622098b17811
   requires_dist:
