@@ -1507,9 +1507,9 @@ packages:
   requires_python: '>=3.8'
 - kind: pypi
   name: keyrings-artifacts
-  version: 0.4.3
+  version: 0.4.4
   path: .
-  sha256: 1dbfc061c55d16e138ae32af4828002b5f1a4f3b06d6eacb2f04a99e37e0340e
+  sha256: 84db6eddf9f9f86a9419e98e6fd07ec1f4a1d03aa3969ae8463389420a89665e
   requires_dist:
   - azure-identity>=1.17.1
   - keyring>=16.0
