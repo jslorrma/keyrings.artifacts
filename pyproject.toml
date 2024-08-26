@@ -65,6 +65,12 @@ path = "src/keyrings_artifacts/_version.py"
 [tool.hatch.build]
 packages = ["src/keyrings_artifacts"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
+
+[tool.hatch.build.targets.sdist]
+packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pixi Configuration
 # ─────────────────────────────────────────────────────────────────────────────
@@ -128,7 +134,7 @@ outputs = ["dist/*.whl", "dist/*.tar.gz"]
 [tool.pixi.feature.dev.tasks.recipe]
 # Generate a conda recipe using grayskull
 # Usage: pixi run -e dev recipe
-cmd = "pixi exec grayskull pypi --strict-conda-forge --use-v1-format keyrings.artifacts"
+cmd = "pixi exec grayskull pypi --strict-conda-forge keyrings.artifacts"
 cwd = "recipe"
 
 [tool.pixi.feature.dev.tasks.release]
