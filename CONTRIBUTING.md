@@ -31,17 +31,24 @@ pixi install -e dev
 pixi run post-install
 ```
 
+These commands install the necessary packages, set up the pre-commit hooks, and prepare the project for development.
+
 > **Note**: The development environment is an incremental environment that includes the default environment (see the Pixi [documentation](https://pixi.sh/latest/reference/project_configuration/#the-environments-table) for more information).
 
-for the development environment. You can run
-
+To just install the default environment, you can run:
 ```bash
 pixi install
 ```
 
-to install only the default environment.
-
 > **Note**: In general you can also run `pixi install --all` to install all environments specified in the `pixi.toml` file (In this repository, it's the `default` and `dev` environment).
+
+Verify the installation by running:
+
+```bash
+pixi list
+```
+
+You should see the packages installed in the list.
 
 ### Managing Python Dependencies with `Pixi`
 
