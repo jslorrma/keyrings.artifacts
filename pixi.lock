@@ -1282,7 +1282,7 @@ packages:
   url: https://files.pythonhosted.org/packages/ff/db/0c52c4cf5e4bd9f5d7135ec7669a3a767af21b3a308e1ed3674881e52b62/jaraco.context-6.0.1-py3-none-any.whl
   sha256: f797fc481b490edb305122c9181830a3a5b76d84ef6d1aef2fb9b47ab956f9e4
   requires_dist:
-  - backports-tarfile ; python_version < '3.12'
+  - backports-tarfile ; python_full_version < '3.12'
   - sphinx>=3.5 ; extra == 'doc'
   - jaraco-packaging>=9.3 ; extra == 'doc'
   - rst-linker>=1.9 ; extra == 'doc'
@@ -1349,7 +1349,7 @@ packages:
   - trio ; extra == 'test'
   - async-timeout ; extra == 'test'
   - trio ; extra == 'trio'
-  - async-generator ; extra == 'trio' and python_version == '3.6'
+  - async-generator ; python_full_version == '3.6.*' and extra == 'trio'
   requires_python: '>=3.7'
 - kind: conda
   name: jinja2
@@ -1459,8 +1459,8 @@ packages:
   - jaraco-classes
   - jaraco-functools
   - jaraco-context
-  - importlib-metadata>=4.11.4 ; python_version < '3.12'
-  - importlib-resources ; python_version < '3.9'
+  - importlib-metadata>=4.11.4 ; python_full_version < '3.12'
+  - importlib-resources ; python_full_version < '3.9'
   - secretstorage>=3.2 ; sys_platform == 'linux'
   - jeepney>=0.4.2 ; sys_platform == 'linux'
   - pywin32-ctypes>=0.2.0 ; sys_platform == 'win32'
@@ -1501,15 +1501,15 @@ packages:
   - keyring>=20 ; extra == 'test'
   - pycryptodomex ; extra == 'test'
   - pycryptodome ; extra == 'test'
-  - gdata ; python_version == '2.7' and extra == 'test'
-  - python-keyczar ; python_version == '2.7' and extra == 'test'
+  - gdata ; python_full_version == '2.7.*' and extra == 'test'
+  - python-keyczar ; python_full_version == '2.7.*' and extra == 'test'
   - pytest-ruff>=0.2.1 ; sys_platform != 'cygwin' and extra == 'test'
   requires_python: '>=3.8'
 - kind: pypi
   name: keyrings-artifacts
   version: 0.4.4
   path: .
-  sha256: 84db6eddf9f9f86a9419e98e6fd07ec1f4a1d03aa3969ae8463389420a89665e
+  sha256: f919142cdd40bd61d6892035c0adb6e4fda5e27419053dee1c00c9e7f38915b0
   requires_dist:
   - azure-identity>=1.17.1
   - keyring>=16.0
@@ -2081,7 +2081,7 @@ packages:
   - requests<3,>=2.0.0
   - pyjwt[crypto]<3,>=1.0.0
   - cryptography<45,>=2.5
-  - pymsalruntime<0.17,>=0.13.2 ; (python_version >= '3.6' and platform_system == 'Windows') and extra == 'broker'
+  - pymsalruntime<0.17,>=0.13.2 ; python_full_version >= '3.6' and platform_system == 'Windows' and extra == 'broker'
   requires_python: '>=3.7'
 - kind: pypi
   name: msal-extensions

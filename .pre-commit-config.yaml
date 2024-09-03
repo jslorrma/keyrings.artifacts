@@ -57,6 +57,7 @@ repos:
       - id: yamllint
         stages: [commit]
         args: ['-d {extends: relaxed, rules: {line-length: disable}}', '-s']
+        exclude: 'recipe/keyrings.artifacts/meta.yaml'
 
 
   - repo: https://github.com/keewis/blackdoc
