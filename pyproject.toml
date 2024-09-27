@@ -171,18 +171,6 @@ cmd = """version=$(pixi exec hatch version) \
 && git push origin v$version
 """
 
-[tool.pixi.feature.dev.tasks.requirements-export]
-# Export dependencies to requirements.txt
-cmd = "bitc_helper export-requirements requirements"
-
-[tool.pixi.feature.dev.tasks.requirements-export-dev]
-# Export development dependencies to requirements.txt
-cmd = "bitc_helper export-requirements requirements --feature dev"
-
-[tool.pixi.feature.dev.tasks.requirements-export-all]
-# Export all dependencies to requirements.txt
-cmd = "bitc_helper export-requirements requirements --all"
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Code Formatting and Linting
 # ─────────────────────────────────────────────────────────────────────────────
