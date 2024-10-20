@@ -27,7 +27,7 @@ dependencies = [
   "azure-identity>=1.17.1",
   "keyrings.alt>=5.0.0",
   "pycryptodomex>=3.20.0",
-  "setuptools>=75.2.0,<76",
+  "setuptools>=70.0.0,<76",
 ]
 
 [tool.pixi.feature.dev.dependencies]
@@ -155,6 +155,15 @@ sed -i '' 's/\\${{ PYTHON }}/python/g' keyrings.artifacts/meta.yaml; \
 sed -i '' 's/- keyrings.artifacts/- keyrings_artifacts/g' keyrings.artifacts/meta.yaml; \
 sed -i '' '/- keyrings-alt >=5.0.0/d' keyrings.artifacts/meta.yaml; \
 sed -i '' $'s/about:/about:\\\\n  home: https:\\/\\/github.com\\/jslorrma\\/keyrings.artifacts/' keyrings.artifacts/meta.yaml
+"""
+cwd = "recipe"
+
+[tool.pixi.feature.dev.tasks.test-recipe]
+# Test the conda recipe using conda-build
+# Usage: pixi run -e dev test-recipe
+cmd = """
+pixi exec conda-build keyrings.artifacts \
+&& pixi exec conda-build purge
 """
 cwd = "recipe"
 
