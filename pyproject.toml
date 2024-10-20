@@ -5,16 +5,14 @@
 name = "keyrings.artifacts"
 description = "Keyring backend, that automatically retrieves credentials for Azure Artifacts."
 authors = [{ name = "Jens Lorrmann", email = "jslorrma@gmail.com" }]
-maintainers = [
-  { name = "Jens Lorrmann", email = "jslorrma@gmail.com" },
-]
+maintainers = [{ name = "Jens Lorrmann", email = "jslorrma@gmail.com" }]
 readme = "README.md"
 classifiers = [
-	"Development Status :: 5 - Production/Stable",
-	"Intended Audience :: Developers",
-	"License :: OSI Approved :: MIT License",
-	"Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3 :: Only",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
 ]
 dynamic = ["version"]
 
@@ -29,6 +27,7 @@ dependencies = [
   "azure-identity>=1.17.1",
   "keyrings.alt>=5.0.0",
   "pycryptodomex>=3.20.0",
+  "setuptools>=75.2.0,<76",
 ]
 
 [tool.pixi.feature.dev.dependencies]
@@ -272,5 +271,5 @@ lint.ignore = [
   # while int | float can be shortened to float, the former is more explicit
   # "PYI041",  # not yet implemented
   # Checks for implicitly concatenated strings on a single line.
-  "ISC001"
+  "ISC001",
 ]
