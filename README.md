@@ -46,8 +46,8 @@ Following the installation and configuration instructions in the pip documentati
 > **Note:** `pixi` does not yet support global multi-package installations (it's planned for the future, see the [Pixi Global Manifest](https://pixi.sh/dev/design_proposals/pixi_global_manifest/)). To work around this, you can instead globally install `keyrings.artifacts` and `keyring` will be installed automatically as a dependency and its executable will be linked accordingly.
 
 ```bash
-# Install keyrings.artifacts globally and link the keyring executable
-pixi global install keyrings.artifacts
+# Install keyring and keyrings.artifacts globally from conda-forge using pixi
+pixi global install --environment keyring --expose keyring keyring keyrings.artifacts
 ```
 
 ### uv
@@ -58,14 +58,9 @@ uv tool install keyring --with keyrings.artifacts
 
 ### pipx
 ```bash
-# Install keyring from PyPI using pipx
-$ pipx install keyring --index-url https://pypi.org/simple
-
-# Inject the keyrings.artifacts package
-$ pipx inject keyring keyrings.artifacts --index-url https://pypi.org/simple
+# Install keyring from PyPI using pipx and inject the keyrings.artifacts package
+$ pipx install keyring && pipx inject keyring keyrings.artifacts
 ```
-
-
 
 ## Usage
 
