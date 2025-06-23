@@ -40,7 +40,7 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
     )
     _PROVIDER = CredentialProvider
 
-    __LOCAL_BACKEND: keyring.backend.KeyringBackend | None = None
+    __local_backend: keyring.backend.KeyringBackend | None = None
 
     priority = 9.9
 
@@ -49,8 +49,8 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         """Get the local keyring backend."""
         # if we fall back to the local backend, we don't want to loop infinitely
         # so we set the priority to -1 to prevent it from being selected again
-        if self.__LOCAL_BACKEND is not None:
-            return self.__LOCAL_BACKEND
+        if self.__local_backend is not None:
+            return self.__local_backend
 
         _self = next(
             kr
@@ -58,8 +58,8 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
             if kr.__class__.__name__ == "ArtifactsKeyringBackend"
         )
         _self.priority = -1
-        self.__LOCAL_BACKEND = keyring.get_keyring()
-        return self.__LOCAL_BACKEND
+        self.__local_backend = keyring.get_keyring()
+        return self.__local_backend
 
     def __init__(self):
         self._cache = {}
