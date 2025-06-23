@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/crpyt_file.py
----------------------------
+# keyrings_artifacts/crpyt_file.py
 
 This module provides an encrypted keyring backend.
 """
@@ -12,6 +11,8 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
+import contextlib
+import pathlib
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -50,7 +51,7 @@ echo "$unique_key"
 """
 
 
-class EncryptedKeyring_(EncryptedKeyring):
+class _EncryptedKeyring(EncryptedKeyring):
     """
     Encrypted keyring backend.
 
@@ -58,21 +59,35 @@ class EncryptedKeyring_(EncryptedKeyring):
     encrypted using the Fernet symmetric encryption algorithm. The encryption key is derived from
     a password generated from system and hardware information.
     """
+
     filename = "artifacts_keyring.cfg"
     priority = 3
 
     @property
-    def _password(self):
+    def _password(self) -> str:
         _command = f"bash -c '{_KEYGEN_SCRIPT}'"
-        return subprocess.run(_command, shell=True, capture_output=True, check=False).stdout.decode("utf-8").strip()
+        return (
+            subprocess.run(_command, shell=True, capture_output=True, check=False)
+            .stdout.decode("utf-8")
+            .strip()
+        )
 
-    def _get_new_password(self):
+    def _get_new_password(self) -> str:
         return self._password
 
-    def _unlock(self):
-        """
-        Unlock this keyring by getting the password for the keyring from the
-        user.
+    def _unlock(self) -> None:
+        """Unlock this keyring by getting the password for the keyring from the user.
+
+        This method retrieves the password from the keyring using the `get_password` method.
+        If the password reference does not match the expected value, it reinitializes the keyring
+        by deleting the existing file and calling `_init_file()`.
+
+        Raises
+        ------
+        ValueError
+            If the password reference does not match the expected value, indicating a mismatch
+            in the hardware information or an incorrect password.
+
         """
         self.keyring_key = self._password
         try:
@@ -81,12 +96,9 @@ class EncryptedKeyring_(EncryptedKeyring):
                 # keyring_key is generated from system and hardware information, so this can
                 # only happen if hardware information has changed, which is unlikely. But if it
                 # does happen, we need to initialize the keyring again.
-                import pathlib
 
-                try:
+                with contextlib.suppress(FileNotFoundError):
                     pathlib.Path(self.file_path).unlink()
-                except FileNotFoundError:
-                    pass
                 self._init_file()
         except AssertionError:
             self._lock()
@@ -94,4 +106,4 @@ class EncryptedKeyring_(EncryptedKeyring):
 
 
 if TYPE_CHECKING:
-    EncryptedKeyring_()
+    _EncryptedKeyring()

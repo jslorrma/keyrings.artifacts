@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts-keyring library
--------------------------
+# artifacts-keyring library
 
 Keyring extension, that automatically retrieves credentials for Azure Artifacts.
 """

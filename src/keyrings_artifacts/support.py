@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/support.py
----------------------------
+# keyrings_artifacts/support.py
 
 It provides the AzureCredentialWithDevicecode class which extends ChainedTokenCredential to support
 the following credential types:
@@ -20,7 +19,7 @@ __email__ = "jslorrma@gmail.com"
 
 import os
 import webbrowser
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from azure.identity import (
     AzureCliCredential,
@@ -30,6 +29,9 @@ from azure.identity import (
     InteractiveBrowserCredential,
     SharedTokenCacheCredential,
 )
+
+if TYPE_CHECKING:
+    from azure.identity import AccessToken
 
 # Azure DevOps application default scope
 # from https://github.com/microsoft/artifacts-credprovider/blob/cdc427e8236212b33041b4276961855b39bbe98d/CredentialProvider.Microsoft/CredentialProviders/Vsts/MSAL/MsalTokenProviderFactory.cs#L11
@@ -99,9 +101,7 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
                 authority=authority,
             ),
             *[
-                InteractiveBrowserCredential(
-                    tenant_id=tenant_id
-                )
+                InteractiveBrowserCredential(tenant_id=tenant_id)
                 # add interactive browser credential if a browser is available
                 if self._is_interactive_browser_possible()
                 else []
@@ -114,7 +114,7 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
 
         super().__init__(*(cred for cred in cred_chain if cred))
 
-    def _is_interactive_browser_possible(self):
+    def _is_interactive_browser_possible(self) -> bool:
         """Check if the interactive browser credential is possible."""
         try:
             webbrowser.get()
@@ -122,7 +122,7 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
         except webbrowser.Error:
             return False
 
-    def get_token(self, *scopes: str, **kwargs):
+    def get_token(self, *scopes: str, **kwargs: Any) -> AccessToken:
         """
         Get an access token for the specified scopes.
 
@@ -143,7 +143,8 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
         return super().get_token(*scopes, **kwargs)
 
     def __enter__(self) -> AzureCredentialWithDevicecode:
+        """Enter the Credential context manager."""
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: Any) -> None:  # noqa: D105
         pass

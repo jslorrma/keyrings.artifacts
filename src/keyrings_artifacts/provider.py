@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/provider.py
----------------------------
+# keyrings_artifacts/provider.py
 
 This module implements the CredentialProvider class which is a Azure credential providers for
 authenticating with Azure DevOps Artifacts.
@@ -76,15 +75,19 @@ class CredentialProvider:
 
     def _is_upload_endpoint(self, url: str) -> bool:
         """Check if the given URL is the upload endpoint."""
-        return url.rstrip('/').endswith("pypi/upload")
+        return url.rstrip("/").endswith("pypi/upload")
 
     def _can_authenticate(self, url: str, auth: tuple[str, str] | None) -> bool:
         """Check if the given URL can be authenticated with the given credentials."""
         response = requests.get(url, auth=auth)
 
-        return response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR and response.status_code not in (
-            HTTPStatus.UNAUTHORIZED,
-            HTTPStatus.FORBIDDEN,
+        return (
+            response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR
+            and response.status_code
+            not in (
+                HTTPStatus.UNAUTHORIZED,
+                HTTPStatus.FORBIDDEN,
+            )
         )
 
     def _get_authorities(self, url: str) -> tuple[str, str]:
@@ -94,10 +97,12 @@ class CredentialProvider:
         headers = response.headers
 
         # extract oauth authority and tenant_id
-        match = re.search(r'Bearer authorization_uri=(https://[^/]+/)[^,]+', headers["WWW-Authenticate"])
+        match = re.search(
+            r"Bearer authorization_uri=(https://[^/]+/)[^,]+", headers["WWW-Authenticate"]
+        )
         if match:
             bearer_authority = match.group(1)
-            tenant_id = match.group(0).rsplit("/",1)[1]
+            tenant_id = match.group(0).rsplit("/", 1)[1]
         else:
             # the Azure DevOps endpoint seems to be linked to a personal Microsoft account
             # and only basic authentication or PAT is supported
@@ -105,9 +110,7 @@ class CredentialProvider:
             tenant_id = ""
         return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
 
-    def _get_bearer_token(
-        self, authority: str, tenant_id: str, scope: str
-    ) -> str:
+    def _get_bearer_token(self, authority: str, tenant_id: str, scope: str) -> str:
         """
         Get the bearer token for the given URL.
 
@@ -121,10 +124,7 @@ class CredentialProvider:
         """
         try:
             token = (
-                AzureCredentialWithDevicecode(
-                    tenant_id=tenant_id,
-                    authority=authority
-                )
+                AzureCredentialWithDevicecode(tenant_id=tenant_id, authority=authority)
                 .get_token(scope)
                 .token
             )
@@ -134,12 +134,12 @@ class CredentialProvider:
             # DefaultAzureCredential raises an exception when there is a token
             # found in the cache but the token has expired. In this case we catch the error and
             # initiate the an Interactive Browser flow if possible or fall back to the DeviceCode flow.
-            logger.warning(f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow.")
+            logger.warning(
+                f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow."
+            )
             token = (
                 AzureCredentialWithDevicecode(
-                    authority=authority,
-                    tenant_id=tenant_id,
-                    with_az_cli=False
+                    authority=authority, tenant_id=tenant_id, with_az_cli=False
                 )
                 .get_token(scope)
                 .token
@@ -157,10 +157,14 @@ class CredentialProvider:
             }
 
             # Build the request URL
-            visual_studio_url = f"{authority_endpoint.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
+            visual_studio_url = (
+                f"{authority_endpoint.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
+            )
 
             # Build the request payload
-            _delta = timedelta(days=int(os.getenv(self._PAT_DURATION_ENV_VAR, self._DEFAULT_PAT_DURATION)))
+            _delta = timedelta(
+                days=int(os.getenv(self._PAT_DURATION_ENV_VAR, self._DEFAULT_PAT_DURATION))
+            )
             expiry = (datetime.now(timezone.utc) + _delta).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             request_payload = {
@@ -170,7 +174,9 @@ class CredentialProvider:
                 "allOrgs": "false",
             }
             # Send request
-            with requests.post(visual_studio_url, headers=request_headers, json=request_payload) as response:
+            with requests.post(
+                visual_studio_url, headers=request_headers, json=request_payload
+            ) as response:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
 
                 # Return the PAT token
@@ -191,7 +197,6 @@ class CredentialProvider:
 
     def _get_credentials_from_credential_provider(self, url: str) -> tuple[str | None, str | None]:
         """Get the credentials from the credential provider."""
-
         # get username
         username = os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
         # get authorities and tenant_id
@@ -229,9 +234,14 @@ class CredentialProvider:
             return None, None
 
         # Return personal access token if available
-        if os.environ.get(self._PAT_ENV_VAR) and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false":
+        if (
+            os.environ.get(self._PAT_ENV_VAR)
+            and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false"
+        ):
             # Return the username and password from the environment variables
-            return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(self._PAT_ENV_VAR)
+            return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(
+                self._PAT_ENV_VAR
+            )
 
         # Getting credentials; the credentials may come from the cache
         username, password = self._get_credentials_from_credential_provider(url)
