@@ -2,7 +2,7 @@
 """
 # tests/test_crypt_file.py
 
-Unit tests for the EncryptedKeyring_ class in the keyrings_artifacts package.
+Unit tests for the _EncryptedKeyring class in the keyrings_artifacts package.
 """
 
 from __future__ import annotations

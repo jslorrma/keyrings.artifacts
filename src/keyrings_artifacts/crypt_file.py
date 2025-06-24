@@ -12,11 +12,14 @@ __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
 import contextlib
+import logging
 import pathlib
 import subprocess
 from typing import TYPE_CHECKING
 
 from keyrings.alt.file import EncryptedKeyring
+
+logger = logging.getLogger(__name__)
 
 _KEYGEN_SCRIPT = """
 # Gather CPU information
@@ -66,11 +69,13 @@ class _EncryptedKeyring(EncryptedKeyring):
     @property
     def _password(self) -> str:
         _command = f"bash -c '{_KEYGEN_SCRIPT}'"
-        return (
-            subprocess.run(_command, shell=True, capture_output=True, check=False)
-            .stdout.decode("utf-8")
-            .strip()
-        )
+        try:
+            result = subprocess.run(_command, shell=True, capture_output=True, check=False)
+            logger.debug("Generated password using system/hardware info script.")
+            return result.stdout.decode("utf-8").strip()
+        except Exception as exc:
+            logger.exception("Failed to generate password: %s", exc)
+            raise
 
     def _get_new_password(self) -> str:
         return self._password
@@ -93,15 +98,13 @@ class _EncryptedKeyring(EncryptedKeyring):
         try:
             ref_pw = self.get_password("keyring-setting", "password reference")
             if ref_pw != "password reference value":
-                # keyring_key is generated from system and hardware information, so this can
-                # only happen if hardware information has changed, which is unlikely. But if it
-                # does happen, we need to initialize the keyring again.
-
+                logger.warning("Password reference mismatch, reinitializing keyring file.")
                 with contextlib.suppress(FileNotFoundError):
                     pathlib.Path(self.file_path).unlink()
                 self._init_file()
         except AssertionError:
             self._lock()
+            logger.error("Incorrect password during unlock.")
             raise ValueError("Incorrect Password")  # noqa: B904
 
 

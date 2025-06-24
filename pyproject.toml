@@ -47,7 +47,7 @@ keyrings_artifacts = { path = ".", editable = true }
 
 [project.entry-points."keyring.backends"]
 artifacts = "keyrings_artifacts.artifacts:ArtifactsKeyringBackend"
-crypt_file = "keyrings_artifacts.crypt_file:EncryptedKeyring_"
+crypt_file = "keyrings_artifacts.crypt_file:_EncryptedKeyring"
 
 #
 [project.scripts]

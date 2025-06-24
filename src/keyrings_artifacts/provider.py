@@ -26,7 +26,6 @@ from .support import AzureCredentialWithDevicecode
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 logging.getLogger("azure.identity._credentials.managed_identity").setLevel(logging.ERROR)
 logging.getLogger("azure.identity._credentials.environment").setLevel(logging.ERROR)
@@ -79,36 +78,45 @@ class CredentialProvider:
 
     def _can_authenticate(self, url: str, auth: tuple[str, str] | None) -> bool:
         """Check if the given URL can be authenticated with the given credentials."""
-        response = requests.get(url, auth=auth)
-
-        return (
-            response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR
-            and response.status_code
-            not in (
-                HTTPStatus.UNAUTHORIZED,
-                HTTPStatus.FORBIDDEN,
+        try:
+            response = requests.get(url, auth=auth)
+            logger.debug("Authentication check for url=%r, status=%r", url, response.status_code)
+            return (
+                response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR
+                and response.status_code
+                not in (
+                    HTTPStatus.UNAUTHORIZED,
+                    HTTPStatus.FORBIDDEN,
+                )
             )
-        )
+        except Exception as exc:
+            logger.exception("Exception during authentication check for url=%r: %s", url, exc)
+            return False
 
-    def _get_authorities(self, url: str) -> tuple[str, str]:
+    def _get_authorities(self, url: str) -> tuple[str, str, str]:
         """Send a GET to the url and parse the response header"""
-        # send GET request
-        response = requests.get(url)
-        headers = response.headers
-
-        # extract oauth authority and tenant_id
-        match = re.search(
-            r"Bearer authorization_uri=(https://[^/]+/)[^,]+", headers["WWW-Authenticate"]
-        )
-        if match:
-            bearer_authority = match.group(1)
-            tenant_id = match.group(0).rsplit("/", 1)[1]
-        else:
-            # the Azure DevOps endpoint seems to be linked to a personal Microsoft account
-            # and only basic authentication or PAT is supported
-            bearer_authority = ""
-            tenant_id = ""
-        return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
+        try:
+            response = requests.get(url)
+            headers = response.headers
+            match = re.search(
+                r"Bearer authorization_uri=(https://[^/]+/)[^,]+", headers["WWW-Authenticate"]
+            )
+            if match:
+                bearer_authority = match.group(1)
+                tenant_id = match.group(0).rsplit("/", 1)[1]
+            else:
+                bearer_authority = ""
+                tenant_id = ""
+            logger.debug(
+                "Parsed authorities for url=%r: authority=%r, tenant_id=%r",
+                url,
+                bearer_authority,
+                tenant_id,
+            )
+            return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
+        except Exception as exc:
+            logger.exception("Failed to get authorities for url=%r: %s", url, exc)
+            return "", "", ""
 
     def _get_bearer_token(self, authority: str, tenant_id: str, scope: str) -> str:
         """
@@ -128,12 +136,13 @@ class CredentialProvider:
                 .get_token(scope)
                 .token
             )
+            logger.debug(
+                "Bearer token acquired for authority=%r, tenant_id=%r", authority, tenant_id
+            )
         except ClientAuthenticationError as e:
             if "Azure Active Directory error" not in str(e):
+                logger.exception("ClientAuthenticationError not related to AAD: %s", e)
                 raise e
-            # DefaultAzureCredential raises an exception when there is a token
-            # found in the cache but the token has expired. In this case we catch the error and
-            # initiate the an Interactive Browser flow if possible or fall back to the DeviceCode flow.
             logger.warning(
                 f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow."
             )
@@ -144,6 +153,9 @@ class CredentialProvider:
                 .get_token(scope)
                 .token
             )
+        except Exception as exc:
+            logger.exception("Failed to get bearer token: %s", exc)
+            raise
         return token
 
     def _exchange_bearer_for_pat(self, authority_endpoint: str, bearer_token: str) -> str:
@@ -178,21 +190,19 @@ class CredentialProvider:
                 visual_studio_url, headers=request_headers, json=request_payload
             ) as response:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
-
-                # Return the PAT token
+                logger.debug("PAT successfully exchanged for bearer token at %r", visual_studio_url)
                 return response.json()["patToken"]["token"]
-
         except HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
+            logger.error("HTTP error occurred: %s", http_err)
             raise
         except RequestException as req_err:
-            print(f"Request error occurred: {req_err}")
+            logger.error("Request error occurred: %s", req_err)
             raise
         except KeyError as key_err:
-            print(f"Key error occurred: {key_err}")
+            logger.error("Key error occurred: %s", key_err)
             raise
         except Exception as err:
-            print(f"An error occurred: {err}")
+            logger.error("An error occurred: %s", err)
             raise
 
     def _get_credentials_from_credential_provider(self, url: str) -> tuple[str | None, str | None]:

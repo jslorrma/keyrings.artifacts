@@ -1226,7 +1226,7 @@ packages:
 - pypi: ./
   name: keyrings-artifacts
   version: 0.5.0
-  sha256: 565ff33c4448e1db041b47c476ac877b38ccdd0e3d9e861af3e81c96c254978c
+  sha256: 68a835d24975588ffdd5c7885e624fdc546b23ba4ff64dedf6b1605e8bb8af1c
   requires_dist:
   - azure-identity>=1.17.1
   - keyring>=16.0
