@@ -112,7 +112,6 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
     def get_credential(
         self, service: str, username: str | None
     ) -> keyring.credentials.SimpleCredential | None:
-        logger.debug("Requesting credentials for service=%r, username=%r", service, username)
         """
         Retrieve credentials for a given service.
 
@@ -128,6 +127,9 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         Optional[keyring.credentials.SimpleCredential]
             The credentials for the service, or None if not found.
         """
+        # Normalize the service URL as the first step
+        service = self._normalize_service_url(service)
+        logger.debug("Requesting credentials for service=%r, username=%r", service, username)
         try:
             parsed = urlsplit(service)
         except Exception as exc:
@@ -142,26 +144,28 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         if not use_bearer_token and username:
             stored_password = self._local_backend.get_password(service, username)
             if stored_password and provider._can_authenticate(  # noqa: SLF001
-                service, (self._PROVIDER.username, stored_password)
+                service,
+                (self._PROVIDER.username, stored_password),  # type: ignore  (username property is of type str)
             ):
                 logger.debug(
                     "Using stored credentials for service=%r, username=%r", service, username
                 )
-                return keyring.credentials.SimpleCredential(username, "***hidden***")
-        username_prov, password_prov = provider.get_credentials(service)
+                return keyring.credentials.SimpleCredential(username, stored_password)
+
+        # else or if the stored password is not valid, try to retrieve the credentials from the provider
+        username, password = provider.get_credentials(service)
         logger.debug(
-            "Provisioned credentials for service=%r, username=%r (credential value hidden)",
+            "Provisioned credentials for service=%r, username=%r",
             service,
-            username_prov,
+            username,
         )
-        if username_prov and password_prov:
+        if username and password:
             if not use_bearer_token:
-                self._local_backend.set_password(service, username_prov, password_prov)
-                self._cache[service, username_prov] = password_prov
-            return keyring.credentials.SimpleCredential(username_prov, "***hidden***")
+                self._local_backend.set_password(service, username, password)
+                self._cache[service, username] = password
+            return keyring.credentials.SimpleCredential(username, password)
 
     def get_password(self, service: str, username: str) -> str | None:
-        logger.debug("Getting password for service=%r, username=%r", service, username)
         """
         Retrieve the password for a given service and username.
 
@@ -177,26 +181,23 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         Optional[str]
             The password for the service, or None if not found.
         """
-        normalized_service = self._normalize_service_url(service)
-        password = self._cache.get((normalized_service, username), None)
+        # Normalize the service URL as the first step
+        service = self._normalize_service_url(service)
+        logger.debug("Getting password for service=%r, username=%r", service, username)
+        password = self._cache.get((service, username), None)
         if password is not None:
-            logger.debug(
-                "Password found in cache for service=%r, username=%r", normalized_service, username
-            )
+            logger.debug("Password found in cache for service=%r, username=%r", service, username)
             return password
-        creds = self.get_credential(normalized_service, username)
+
+        creds = self.get_credential(service, username)
         if creds and username == creds.username:
-            logger.debug(
-                "Password retrieved for service=%r, username=%r", normalized_service, username
-            )
-            return None if creds.password == "***hidden***" else creds.password
-        logger.debug("No password found for service=%r, username=%r", normalized_service, username)
+            logger.debug("Password retrieved for service=%r, username=%r", service, username)
+            return creds.password
+
+        logger.debug("No password found for service=%r, username=%r", service, username)
         return None
 
     def set_password(self, service: str, username: str, password: str) -> None:
-        logger.debug(
-            "set_password called for service=%r, username=%r (not implemented)", service, username
-        )
         """
         Set the password for a given service and username.
 
@@ -218,7 +219,6 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         raise NotImplementedError()
 
     def delete_password(self, service: str, username: str) -> None:
-        logger.debug("delete_password called for service=%r, username=%r", service, username)
         """
         Delete the password for a given service and username.
 
@@ -234,6 +234,7 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         NotImplementedError
             This method is not implemented.
         """
+        logger.debug("delete_password called for service=%r, username=%r", service, username)
         self._local_backend.delete_password(service, username)
 
 

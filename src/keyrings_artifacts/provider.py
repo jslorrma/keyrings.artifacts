@@ -190,7 +190,7 @@ class CredentialProvider:
                 visual_studio_url, headers=request_headers, json=request_payload
             ) as response:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
-                logger.debug("PAT successfully exchanged for bearer token at %r", visual_studio_url)
+                logger.debug("Bearer token exchanged for PAT, status=%s", response.status_code)
                 return response.json()["patToken"]["token"]
         except HTTPError as http_err:
             logger.error("HTTP error occurred: %s", http_err)
@@ -218,6 +218,7 @@ class CredentialProvider:
             scope=self._OAUTH_SCOPE,
         )
         if os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true":
+            logger.debug("Using bearer token for authentication, username=%s", username)
             return username, bearer_token
 
         # else exchange bearer token for PAT
@@ -249,6 +250,9 @@ class CredentialProvider:
             and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false"
         ):
             # Return the username and password from the environment variables
+            logger.debug(
+                "Using PAT from environment variable %s for URL %s", self._PAT_ENV_VAR, url
+            )
             return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(
                 self._PAT_ENV_VAR
             )
@@ -258,10 +262,16 @@ class CredentialProvider:
 
         # Do not attempt to validate if the credentials could not be obtained
         if username is None or password is None:
+            logger.debug("No credentials found for URL %s, username=%s", url, username)
             return username, password
 
         # Make sure the credentials are still valid (i.e. not expired)
         if self._can_authenticate(url, (username, password)):
+            logger.debug(
+                "Final and valid credentials received from credential provider for URL %s, username=%s",
+                url,
+                username,
+            )
             return username, password
 
         # Return None if the credentials are invalid

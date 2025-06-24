@@ -28,7 +28,7 @@ def configure_logging() -> None:
     handlers = [logging.StreamHandler()] if not logfile else [logging.FileHandler(logfile)]
     logging.basicConfig(
         level=loglevel,
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        format="%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(message)s",
         handlers=handlers,
     )
     globals()["_LOGGER_INITIALIZED"] = True
