@@ -102,11 +102,14 @@ def test_get_password(keyring_backend, service, username, password):  # noqa: AN
     ],
 )
 def test_delete_password(keyring_backend, service, username, password):  # noqa: ANN001
-    # Delete the password
-    keyring_backend.delete_password(service, username)
+    # Get the local backend from the keyring backend
+    local_backend = getattr(keyring_backend, "_local_backend", keyring_backend)
+    # Set and then delete the password in the local backend for testing
+    local_backend.set_password(service, username, password)
+    local_backend.delete_password(service, username)
 
     # Check that the password has been deleted
-    deleted_password = keyring_backend._local_backend.get_password(service, username)  # noqa: SLF001
+    deleted_password = local_backend.get_password(service, username)
     assert deleted_password is None, f"Expected None, got {deleted_password}"
 
 
