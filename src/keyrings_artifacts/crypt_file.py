@@ -53,6 +53,8 @@ unique_key=$(echo -n "$combined_info" | sha256sum | awk '{print $1}')
 echo "$unique_key"
 """
 
+_PASSWORD_REFERENCE = "password reference"
+
 
 class _EncryptedKeyring(EncryptedKeyring):
     """
@@ -64,7 +66,7 @@ class _EncryptedKeyring(EncryptedKeyring):
     """
 
     filename = "artifacts_keyring.cfg"
-    priority = 3
+    priority = 3  # type: ignore  # noqa: PGH003
 
     @property
     def _password(self) -> str:
@@ -94,10 +96,10 @@ class _EncryptedKeyring(EncryptedKeyring):
             in the hardware information or an incorrect password.
 
         """
-        self.keyring_key = self._password
+        self.keyring_key = self._password  # type: ignore  # noqa: PGH003
         try:
-            ref_pw = self.get_password("keyring-setting", "password reference")
-            if ref_pw != "password reference value":
+            ref_pw = self.get_password("keyring-setting", _PASSWORD_REFERENCE)
+            if ref_pw != f"{_PASSWORD_REFERENCE} value":
                 logger.warning("Password reference mismatch, reinitializing keyring file.")
                 with contextlib.suppress(FileNotFoundError):
                     pathlib.Path(self.file_path).unlink()
