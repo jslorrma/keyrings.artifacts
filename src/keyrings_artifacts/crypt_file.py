@@ -102,10 +102,10 @@ class _EncryptedKeyring(EncryptedKeyring):
                 with contextlib.suppress(FileNotFoundError):
                     pathlib.Path(self.file_path).unlink()
                 self._init_file()
-        except AssertionError:
+        except ValueError:
             self._lock()
             logger.error("Incorrect password during unlock.")
-            raise ValueError("Incorrect Password")  # noqa: B904
+            raise
 
 
 if TYPE_CHECKING:
