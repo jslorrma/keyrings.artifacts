@@ -1,5 +1,5 @@
 {% set name = "keyrings.artifacts" %}
-{% set version = "0.5.0" %}
+{% set version = "1.0.2" %}
 
 package:
   name: {{ name|lower }}
@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/keyrings_artifacts-{{ version }}.tar.gz
-  sha256: 51dbecb706dc528719ee799f2ec911b03a831c07ba2a37bf6e606f299220fc70
+  sha256: d6368c6df12e9ab42aa6fe871bd545811429acd5d67e8abada68d4cc3ee4f034
 
 build:
   entry_points:
@@ -28,13 +28,14 @@ requirements:
     - azure-identity >=1.17.1
     - keyrings.alt >=5.0.0
     - pycryptodomex >=3.20.0
-    - setuptools >=70,<76
+    - setuptools >=70.0.0,<76
+    - keyrings.alt >=5.0.0
 
 test:
   imports:
     - keyrings_artifacts
   commands:
-    # - pip check
+    - pip check
     - keyring --help
   requires:
     - pip
