@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-artifacts-keyring library
--------------------------
+# artifacts-keyring library
 
 Keyring extension, that automatically retrieves credentials for Azure Artifacts.
 """
@@ -18,3 +17,7 @@ try:
 except ImportError:
     __version__ = version = "0.0.0"
     __version_tuple__ = (0, 0, 0)
+
+from .logging_config import configure_logging
+
+configure_logging()

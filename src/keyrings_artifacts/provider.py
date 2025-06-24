@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/provider.py
----------------------------
+# keyrings_artifacts/provider.py
 
 This module implements the CredentialProvider class which is a Azure credential providers for
 authenticating with Azure DevOps Artifacts.
@@ -27,7 +26,6 @@ from .support import AzureCredentialWithDevicecode
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 logging.getLogger("azure.identity._credentials.managed_identity").setLevel(logging.ERROR)
 logging.getLogger("azure.identity._credentials.environment").setLevel(logging.ERROR)
@@ -76,38 +74,51 @@ class CredentialProvider:
 
     def _is_upload_endpoint(self, url: str) -> bool:
         """Check if the given URL is the upload endpoint."""
-        return url.rstrip('/').endswith("pypi/upload")
+        return url.rstrip("/").endswith("pypi/upload")
 
     def _can_authenticate(self, url: str, auth: tuple[str, str] | None) -> bool:
         """Check if the given URL can be authenticated with the given credentials."""
-        response = requests.get(url, auth=auth)
+        try:
+            response = requests.get(url, auth=auth)
+            logger.debug("Authentication check for url=%r, status=%r", url, response.status_code)
+            return (
+                response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR
+                and response.status_code
+                not in (
+                    HTTPStatus.UNAUTHORIZED,
+                    HTTPStatus.FORBIDDEN,
+                )
+            )
+        except Exception as exc:
+            logger.exception("Exception during authentication check for url=%r: %s", url, exc)
+            return False
 
-        return response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR and response.status_code not in (
-            HTTPStatus.UNAUTHORIZED,
-            HTTPStatus.FORBIDDEN,
-        )
-
-    def _get_authorities(self, url: str) -> tuple[str, str]:
+    def _get_authorities(self, url: str) -> tuple[str, str, str]:
         """Send a GET to the url and parse the response header"""
-        # send GET request
-        response = requests.get(url)
-        headers = response.headers
+        try:
+            response = requests.get(url)
+            headers = response.headers
+            match = re.search(
+                r"Bearer authorization_uri=(https://[^/]+/)[^,]+", headers["WWW-Authenticate"]
+            )
+            if match:
+                bearer_authority = match.group(1)
+                tenant_id = match.group(0).rsplit("/", 1)[1]
+            else:
+                bearer_authority = ""
+                tenant_id = ""
+            logger.debug(
+                "Parsed authorities for url=%r: authority=%r, tenant_id=%r",
+                url,
+                bearer_authority,
+                tenant_id,
+            )
+            return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
+        except Exception as exc:
+            logger.exception("Failed to get authorities for url=%r: %s", url, exc)
+            return "", "", ""
 
-        # extract oauth authority and tenant_id
-        match = re.search(r'Bearer authorization_uri=(https://[^/]+/)[^,]+', headers["WWW-Authenticate"])
-        if match:
-            bearer_authority = match.group(1)
-            tenant_id = match.group(0).rsplit("/",1)[1]
-        else:
-            # the Azure DevOps endpoint seems to be linked to a personal Microsoft account
-            # and only basic authentication or PAT is supported
-            bearer_authority = ""
-            tenant_id = ""
-        return bearer_authority, tenant_id, headers["X-VSS-AuthorizationEndpoint"]
-
-    def _get_bearer_token(
-        self, authority: str, tenant_id: str, scope: str
-    ) -> str:
+    def _get_bearer_token(self, authority: str, tenant_id: str, scope: str) -> str:
         """
         Get the bearer token for the given URL.
 
@@ -121,29 +132,30 @@ class CredentialProvider:
         """
         try:
             token = (
-                AzureCredentialWithDevicecode(
-                    tenant_id=tenant_id,
-                    authority=authority
-                )
+                AzureCredentialWithDevicecode(tenant_id=tenant_id, authority=authority)
                 .get_token(scope)
                 .token
+            )
+            logger.debug(
+                "Bearer token acquired for authority=%r, tenant_id=%r", authority, tenant_id
             )
         except ClientAuthenticationError as e:
             if "Azure Active Directory error" not in str(e):
+                logger.exception("ClientAuthenticationError not related to AAD: %s", e)
                 raise e
-            # DefaultAzureCredential raises an exception when there is a token
-            # found in the cache but the token has expired. In this case we catch the error and
-            # initiate the an Interactive Browser flow if possible or fall back to the DeviceCode flow.
-            logger.warning(f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow.")
+            logger.warning(
+                f"Caught {e.__class__}: {e!s}! Falling back to Interactive Browser flow."
+            )
             token = (
                 AzureCredentialWithDevicecode(
-                    authority=authority,
-                    tenant_id=tenant_id,
-                    with_az_cli=False
+                    authority=authority, tenant_id=tenant_id, with_az_cli=False
                 )
                 .get_token(scope)
                 .token
             )
+        except Exception as exc:
+            logger.exception("Failed to get bearer token: %s", exc)
+            raise
         return token
 
     def _exchange_bearer_for_pat(self, authority_endpoint: str, bearer_token: str) -> str:
@@ -157,10 +169,14 @@ class CredentialProvider:
             }
 
             # Build the request URL
-            visual_studio_url = f"{authority_endpoint.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
+            visual_studio_url = (
+                f"{authority_endpoint.rstrip('/')}/{self._TOKEN_API_ROUTE.lstrip('/')}"
+            )
 
             # Build the request payload
-            _delta = timedelta(days=int(os.getenv(self._PAT_DURATION_ENV_VAR, self._DEFAULT_PAT_DURATION)))
+            _delta = timedelta(
+                days=int(os.getenv(self._PAT_DURATION_ENV_VAR, self._DEFAULT_PAT_DURATION))
+            )
             expiry = (datetime.now(timezone.utc) + _delta).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             request_payload = {
@@ -170,28 +186,27 @@ class CredentialProvider:
                 "allOrgs": "false",
             }
             # Send request
-            with requests.post(visual_studio_url, headers=request_headers, json=request_payload) as response:
+            with requests.post(
+                visual_studio_url, headers=request_headers, json=request_payload
+            ) as response:
                 response.raise_for_status()  # Raise an HTTPError for bad responses
-
-                # Return the PAT token
+                logger.debug("Bearer token exchanged for PAT, status=%s", response.status_code)
                 return response.json()["patToken"]["token"]
-
         except HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
+            logger.error("HTTP error occurred: %s", http_err)
             raise
         except RequestException as req_err:
-            print(f"Request error occurred: {req_err}")
+            logger.error("Request error occurred: %s", req_err)
             raise
         except KeyError as key_err:
-            print(f"Key error occurred: {key_err}")
+            logger.error("Key error occurred: %s", key_err)
             raise
         except Exception as err:
-            print(f"An error occurred: {err}")
+            logger.error("An error occurred: %s", err)
             raise
 
     def _get_credentials_from_credential_provider(self, url: str) -> tuple[str | None, str | None]:
         """Get the credentials from the credential provider."""
-
         # get username
         username = os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME)
         # get authorities and tenant_id
@@ -203,6 +218,7 @@ class CredentialProvider:
             scope=self._OAUTH_SCOPE,
         )
         if os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true":
+            logger.debug("Using bearer token for authentication, username=%s", username)
             return username, bearer_token
 
         # else exchange bearer token for PAT
@@ -229,19 +245,33 @@ class CredentialProvider:
             return None, None
 
         # Return personal access token if available
-        if os.environ.get(self._PAT_ENV_VAR) and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false":
+        if (
+            os.environ.get(self._PAT_ENV_VAR)
+            and os.getenv(self._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "false"
+        ):
             # Return the username and password from the environment variables
-            return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(self._PAT_ENV_VAR)
+            logger.debug(
+                "Using PAT from environment variable %s for URL %s", self._PAT_ENV_VAR, url
+            )
+            return os.getenv(self._ADO_USERNAME_ENV_VAR, self._DEFAULT_USERNAME), os.environ.get(
+                self._PAT_ENV_VAR
+            )
 
         # Getting credentials; the credentials may come from the cache
         username, password = self._get_credentials_from_credential_provider(url)
 
         # Do not attempt to validate if the credentials could not be obtained
         if username is None or password is None:
+            logger.debug("No credentials found for URL %s, username=%s", url, username)
             return username, password
 
         # Make sure the credentials are still valid (i.e. not expired)
         if self._can_authenticate(url, (username, password)):
+            logger.debug(
+                "Final and valid credentials received from credential provider for URL %s, username=%s",
+                url,
+                username,
+            )
             return username, password
 
         # Return None if the credentials are invalid

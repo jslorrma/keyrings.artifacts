@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-keyrings_artifacts/artifacts.py
----------------------------
+# keyrings_artifacts/artifacts.py
 
 Azure Artifacts keyring backend.
 """
@@ -12,14 +11,17 @@ __author__ = "jslorrma"
 __maintainer__ = "jslorrma"
 __email__ = "jslorrma@gmail.com"
 
+import logging
 import os
-import warnings
+import re
 from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 import keyring.credentials
 
 from .provider import CredentialProvider
+
+logger = logging.getLogger(__name__)
 
 
 class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
@@ -32,34 +34,84 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
     code flow.
     """
 
-    SUPPORTED_NETLOC = ("pkgs.dev.azure.com", "pkgs.visualstudio.com", "pkgs.codedev.ms", "pkgs.vsts.me")
+    SUPPORTED_NETLOC = (
+        "pkgs.dev.azure.com",
+        "pkgs.visualstudio.com",
+        "pkgs.codedev.ms",
+        "pkgs.vsts.me",
+    )
     _PROVIDER = CredentialProvider
 
-    __LOCAL_BACKEND = None
+    __local_backend: keyring.backend.KeyringBackend | None = None
 
     priority = 9.9
 
     @property
-    def _LOCAL_BACKEND(self):
-        """
-        Get the local keyring backend.
-        """
+    def _local_backend(self) -> keyring.backend.KeyringBackend:
+        """Get the local keyring backend."""
         # if we fall back to the local backend, we don't want to loop infinitely
         # so we set the priority to -1 to prevent it from being selected again
-        if self.__LOCAL_BACKEND is not None:
-            return self.__LOCAL_BACKEND
+        if self.__local_backend is not None:
+            return self.__local_backend
 
         _self = next(
-            kr for kr in keyring.backend.get_all_keyring() if kr.__class__.__name__ == "ArtifactsKeyringBackend"
+            kr
+            for kr in keyring.backend.get_all_keyring()
+            if kr.__class__.__name__ == "ArtifactsKeyringBackend"
         )
         _self.priority = -1
-        self.__LOCAL_BACKEND = keyring.get_keyring()
-        return self.__LOCAL_BACKEND
+        self.__local_backend = keyring.get_keyring()
+        return self.__local_backend
 
     def __init__(self):
         self._cache = {}
+        logger.debug("ArtifactsKeyringBackend initialized.")
 
-    def get_credential(self, service: str, username: str | None) -> keyring.credentials.SimpleCredential | None:
+    def _normalize_service_url(self, service_url: str) -> str:
+        logger.debug("Normalizing service URL: %r", service_url)
+        """
+        Normalize the service URL to Azure Artifacts PyPI feed pattern.
+
+        Parameters
+        ----------
+        service_url : str
+            The service URL to normalize.
+
+        Returns
+        -------
+        str
+            The normalized service URL if it matches the Azure Artifacts PyPI feed pattern,
+            otherwise returns the original service URL.
+        """
+        try:
+            parsed = urlsplit(service_url)
+            netloc = parsed.netloc.rpartition("@")[-1]
+            if not any(netloc.endswith(suffix) for suffix in self.SUPPORTED_NETLOC):
+                logger.debug("Service URL %r not supported, returning as is.", service_url)
+                return service_url
+            # Regex to match the canonical Azure Artifacts PyPI feed URL with endpoint
+            # Example: https://pkgs.dev.azure.com/ORG/PROJ/_packaging/FEED/pypi/upload or .../simple
+            pattern = r"^/(?P<org>[^/]+)/(?P<proj>[^/]+)/_packaging/(?P<feed>[^/]+)/pypi/(?P<endpoint>upload|simple)"
+            match = re.match(pattern, parsed.path)
+            if match:
+                new_path = (
+                    f"/{match.group('org')}/"
+                    f"{match.group('proj')}/_packaging/"
+                    f"{match.group('feed')}/pypi/"
+                    f"{match.group('endpoint')}"
+                )
+                normalized = f"{parsed.scheme}://{netloc}{new_path}"
+                logger.debug("Normalized service URL: %r", normalized)
+                return normalized
+            logger.debug("Service URL %r did not match pattern, returning as is.", service_url)
+            return service_url
+        except Exception as exc:
+            logger.exception("Exception normalizing service URL %r: %r", service_url, exc)
+            return service_url
+
+    def get_credential(
+        self, service: str, username: str | None
+    ) -> keyring.credentials.SimpleCredential | None:
         """
         Retrieve credentials for a given service.
 
@@ -75,34 +127,41 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         Optional[keyring.credentials.SimpleCredential]
             The credentials for the service, or None if not found.
         """
+        # Normalize the service URL as the first step
+        service = self._normalize_service_url(service)
+        logger.debug("Requesting credentials for service=%r, username=%r", service, username)
         try:
             parsed = urlsplit(service)
         except Exception as exc:
-            warnings.warn(str(exc))  # noqa: B028
+            logger.warning("Failed to parse service URL %r: %s", service, exc)
             return None
-
         netloc = parsed.netloc.rpartition("@")[-1]
-
         if netloc is None or not netloc.endswith(self.SUPPORTED_NETLOC):
+            logger.debug("Netloc %r not supported.", netloc)
             return None
-
         provider = self._PROVIDER()
-        use_bearer_token = os.getenv(provider._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true"
-
+        use_bearer_token = os.getenv(provider._USE_BEARER_TOKEN_VAR_NAME, "False").lower() == "true"  # noqa: SLF001
         if not use_bearer_token and username:
-            # Check if credentials are already stored in the local keyring
-            stored_password = self._LOCAL_BACKEND.get_password(service, username)
-
-            if stored_password and provider._can_authenticate(service, (self._PROVIDER.username, stored_password)):
+            stored_password = self._local_backend.get_password(service, username)
+            if stored_password and provider._can_authenticate(  # noqa: SLF001
+                service,
+                (self._PROVIDER.username, stored_password),  # type: ignore  (username property is of type str)
+            ):
+                logger.debug(
+                    "Using stored credentials for service=%r, username=%r", service, username
+                )
                 return keyring.credentials.SimpleCredential(username, stored_password)
 
         # else or if the stored password is not valid, try to retrieve the credentials from the provider
         username, password = provider.get_credentials(service)
-
+        logger.debug(
+            "Provisioned credentials for service=%r, username=%r",
+            service,
+            username,
+        )
         if username and password:
             if not use_bearer_token:
-                # Store the retrieved username and PAT in the local keyring
-                self._LOCAL_BACKEND.set_password(service, username, password)
+                self._local_backend.set_password(service, username, password)
                 self._cache[service, username] = password
             return keyring.credentials.SimpleCredential(username, password)
 
@@ -122,14 +181,20 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
         Optional[str]
             The password for the service, or None if not found.
         """
+        # Normalize the service URL as the first step
+        service = self._normalize_service_url(service)
+        logger.debug("Getting password for service=%r, username=%r", service, username)
         password = self._cache.get((service, username), None)
         if password is not None:
+            logger.debug("Password found in cache for service=%r, username=%r", service, username)
             return password
 
         creds = self.get_credential(service, username)
         if creds and username == creds.username:
+            logger.debug("Password retrieved for service=%r, username=%r", service, username)
             return creds.password
 
+        logger.debug("No password found for service=%r, username=%r", service, username)
         return None
 
     def set_password(self, service: str, username: str, password: str) -> None:
@@ -163,13 +228,9 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
             The service URL.
         username : str
             The username for the service.
-
-        Raises
-        ------
-        NotImplementedError
-            This method is not implemented.
         """
-        self._LOCAL_BACKEND.delete_password(service, username)
+        logger.debug("delete_password called for service=%r, username=%r", service, username)
+        self._local_backend.delete_password(service, username)
 
 
 if TYPE_CHECKING:

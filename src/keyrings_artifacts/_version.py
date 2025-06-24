@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-artifacts-keyring version file
-------------------------------
-"""
+"""# artifacts-keyring version file"""
 
 from __future__ import annotations
 

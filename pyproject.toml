@@ -31,12 +31,11 @@ dependencies = [
 ]
 
 [tool.pixi.feature.dev.dependencies]
-pytest = ">=8.3.2,<9"
-pytest-mock = ">=3.14.0,<4"
-pytest-cov = ">=5.0.0,<6"
-pytest-html = ">=4.1.1,<5"
-ruff = ">=0.6.2,<0.7"
-black = ">=24.8.0,<25"
+pytest = ">=8.3.2"
+pytest-mock = ">=3.14.0"
+pytest-cov = ">=5.0.0"
+pytest-html = ">=4.1.1"
+ruff = ">=0.6.2"
 ipykernel = ">=6.29.5,<7"
 
 [tool.pixi.pypi-dependencies]
@@ -48,7 +47,7 @@ keyrings_artifacts = { path = ".", editable = true }
 
 [project.entry-points."keyring.backends"]
 artifacts = "keyrings_artifacts.artifacts:ArtifactsKeyringBackend"
-crypt_file = "keyrings_artifacts.crypt_file:EncryptedKeyring_"
+crypt_file = "keyrings_artifacts.crypt_file:_EncryptedKeyring"
 
 #
 [project.scripts]
@@ -68,14 +67,14 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 path = "src/keyrings_artifacts/_version.py"
 
-[tool.hatch.build]
-packages = ["src/keyrings_artifacts"]
+# [tool.hatch.build]
+# packages = ["src/keyrings_artifacts"]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
+# [tool.hatch.build.targets.wheel]
+# packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
 
-[tool.hatch.build.targets.sdist]
-packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
+# [tool.hatch.build.targets.sdist]
+# packages = ["src/keyrings_artifacts", "keyrings_artifacts"]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Pixi Configuration
@@ -182,103 +181,143 @@ cmd = """version=$(pixi exec hatch version) \
 # ─────────────────────────────────────────────────────────────────────────────
 # Code Formatting and Linting
 # ─────────────────────────────────────────────────────────────────────────────
-[tool.black]
-line-length = 120
-include = '\.pyi?$'
-
 [tool.ruff]
-line-length = 120
+line-length = 100
+indent-width = 4
 target-version = "py310"
 fix = true
-src = ["src"]
-lint.select = [
+src = ["src", "notebooks", "tests"]
+
+[tool.ruff.format]
+exclude = [
+  "src/_version.py",
+]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+pydocstyle.convention = "numpy"
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+select = [
   "I",   # isort
   "F",   # pyflakes
-  "E",
-  "W",   # pycodestyle
-  "B",   # flake8-bugbear
-  "PLC",
-  "PLE",
-  "PLR",
-  "PLW", # pylint
-  "PIE", # misc lints
-  "ISC", # implicit string concatenation
-  "TCH", # type-checking imports
-  "C4",  # comprehensions
+  "E",   # pycodestyle errors (formerly known as pep8)
+  "W",   # pycodestyle warnings (formerly known as pep8)
+  "PLC", # pylint conventions
+  "PLE", # pylint errors
+  "PLR", # pylint refactor
+  "PLW", # pylint warnings
+  "B",   # flake8 bugbear
+  "PIE", # flake8 misc lints
+  "ISC", # flake8 implicit string concatenation
+  "TID", # flake8 tidy imports
+  "TC",  # flake8 type-checking
+  "ARG", # flake8 unused arguments
+  "PTH", # flake8 use pathlib
+  "RET", # flake8 return statements
+  "SIM", # flake8 simplify
+  "SLF", # flake8 self
+  "C4",  # flake8 comprehensions
+  "A",   # flake8 builtins
+  "ANN", # flake8 annotations
+  "N",  # flake8 naming
   "PGH", # pygrep-hooks
   "UP",  # pyupgrade
+  "D",  # pydocstyle
   "RUF", # Ruff-specific rules
+  "C90", # check McCabe complexity
 ]
-lint.unfixable = ["PLR"]
-lint.ignore = [
-  # space before : (needed for how black formats slicing)
-  "E203", # not yet implemented
-  # module level import not at top of file
-  "E402",
-  # line tool long (will be handled by black)
+unfixable = ["PLR"]
+ignore = [
+  ##
+  # avoid conflicts with formatter:
+  # - https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+  ##
+  # line tool long
   "E501",
-  # Conflicts with ruff format
+  # Tab indentation
   "W191",
-  # Function is too complex
-  "C901",
-  # do not assign a lambda expression, use a def
-  "E731",
-  # unused variables in function scopes
-  "F841",
-  # line break before binary operator
-  # "W503",  # not yet implemented
-  # line break after binary operator
-  # "W504",  # not yet implemented
-  # invalid escape sequence
-  "W605",
-  # controversial
-  "B006",
-  # controversial
-  "B007",
-  # controversial
-  "B008",
-  # setattr is used to side-step mypy
-  "B009",
-  # getattr is used to side-step mypy
-  "B010",
-  # tests use assert False
-  "B011",
-  # tests use comparisons but not their returned value
-  "B015",
-  # false positives
-  "B019",
-  # # Loop control variable overrides iterable it iterates
-  # "B020",
-  # # Function definition does not bind loop variable
-  # "B023",
-  # Functions defined inside a loop must not use variables redefined in the loop
-  # "B301",  # not yet implemented
-  # # Only works with python >=3.10
-  # "B905",
-  # # Too many arguments to function call
-  # "PLR0913",
-  # # Too many returns
-  # "PLR0911",
-  # Too many branches
-  "PLR0912",
-  # Too many statements
-  "PLR0915",
-  # Redefined loop name
-  "PLW2901",
-  # Global statements are discouraged
-  "PLW0603",
-  # Docstrings should not be included in stubs
-  "PYI021",
-  # No builtin `eval()` allowed
-  "S307",
-  # compare-to-empty-string
-  "PLC1901",
-  # Use typing_extensions.TypeAlias for type aliases
-  # "PYI026",  # not yet implemented
-  # Use "collections.abc.*" instead of "typing.*" (PEP 585 syntax)
-  # "PYI027",  # not yet implemented
-  # while int | float can be shortened to float, the former is more explicit
-  # "PYI041",  # not yet implemented
+  # indentation with a non-multiple of 4 spaces
+  "E111",
+  # indentation with non-multiple of 4 spaces (comment)
+  "E114",
+  # docstring-tab-indentation
+  "D206",
+  # triple-single-quotes
+  "D300",
+  # over-indented
+  "E117",
   # Checks for implicitly concatenated strings on a single line.
   "ISC001",
+  ##
+  # Rule exceptions to ignore too strict rules and confirm to the project's coding style
+  ##
+  # Prefer absolute imports over relative imports from parent modules
+  "TID252",
+  # zip  without "explicit". Only works with python >=3.10
+  "B905",
+  # Dynamically typed expressions (typing.Any) are disallowed
+  "ANN401",
+  # Missing return type for special method
+  "ANN204",
+  # Missing explicit return type
+  "RET503",
+  ##
+  # Rule exceptions for docstrings
+  ##
+  # First line should end with a period
+  "D400",
+  # First line of docstring should be in imperative mood
+  "D401",
+  # First line should end with a period, question mark, or exclamation point
+  "D415",
+]
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = [
+  # skip docstring checks for Jupyter notebooks as code can also be documented
+  # in markdown cells.
+  "D",
+  # Module level import not at top of file; skip for Jupyter notebooks to avoid
+  # complaints about cell or section specific imports.
+  "E402",
+  # Useless expression; skip for Jupyter notebooks to avoid complaints about
+  # expressions at the end of cells, not assigned to a variable, but used to
+  # display output.
+  "B018"
+  ]
+"tests/*" = [
+  # Missing return type annotation
+  "ANN201",
+  # Unused functiion arguments
+  "ARG001",
+  # Missing docstring
+  "D1",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Code Testing
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = [
+  "error",
+]
+log_cli_level = "INFO"
+testpaths = [
+  "tests",
+]
+
+[tool.coverage]
+run.source = ["src/{{ project_name_snake_case }}"]
+port.exclude_lines = [
+  'pragma: no cover',
+  '\.\.\.',
+  'if typing.TYPE_CHECKING:',
 ]
