@@ -128,7 +128,7 @@ jobs:
 
     steps:
       - name: Download all the distribution packages 📦
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
