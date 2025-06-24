@@ -106,7 +106,7 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
             logger.debug("Service URL %r did not match pattern, returning as is.", service_url)
             return service_url
         except Exception as exc:
-            logger.exception("Exception normalizing service URL: %r", exc)
+            logger.exception("Exception normalizing service URL %r: %r", service_url, exc)
             return service_url
 
     def get_credential(
