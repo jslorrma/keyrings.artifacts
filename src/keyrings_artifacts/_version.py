@@ -16,6 +16,6 @@ __version__: str
 __version_tuple__: VERSION_TUPLE
 version_tuple: VERSION_TUPLE
 
-__version__ = "1.0.0"  # version string
+__version__ = "1.0.1"  # version string
 vesion = __version__
 __version_tuple__ = version_tuple = tuple(int(n) for n in __version__.split(".") if n.isdigit())
