@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-# keyrings_artifacts/crpyt_file.py
+# keyrings_artifacts/crypt_file.py
 
 This module provides an encrypted keyring backend.
 """
