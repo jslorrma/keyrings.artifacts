@@ -228,11 +228,6 @@ class ArtifactsKeyringBackend(keyring.backend.KeyringBackend):
             The service URL.
         username : str
             The username for the service.
-
-        Raises
-        ------
-        NotImplementedError
-            This method is not implemented.
         """
         logger.debug("delete_password called for service=%r, username=%r", service, username)
         self._local_backend.delete_password(service, username)
