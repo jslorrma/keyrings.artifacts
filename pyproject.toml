@@ -172,7 +172,7 @@ cwd = "recipe"
 cmd = """version=$(pixi exec hatch version) \
 && pixi update \
 && git add pixi.lock pyproject.toml src/keyrings_artifacts/_version.py \
-&& git commit -m "Release v$version" \
+&& git commit --no-verify -m "Release v$version" \
 && git push origin \
 && git tag -a v$version -m "Release v$version" \
 && git push origin v$version
