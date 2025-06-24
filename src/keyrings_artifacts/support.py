@@ -134,6 +134,22 @@ class AzureCredentialWithDevicecode(ChainedTokenCredential):
             return False
 
     def get_token(self, *scopes: str, **kwargs: Any) -> AccessToken:
+        """
+        Get a token for the specified scopes.
+
+        Parameters
+        ----------
+        scopes : str
+            The scopes for which to request the token. If not provided, defaults to the instance's
+            scope attribute.
+        kwargs : Any
+            Additional keyword arguments to pass to the underlying credential's get_token method.
+
+        Returns
+        -------
+        AccessToken
+            The access token for the specified scopes.
+        """
         logger.debug("Requesting token for scopes: %r", scopes if scopes else (self.scope,))
         if not scopes:
             scopes = (self.scope,)
